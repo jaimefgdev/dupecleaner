@@ -1,8 +1,8 @@
-/* @import debe ir antes que cualquier otra regla, o el navegador lo ignora */
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
-
-    @font-face { font-family:'GoogleSans'; src:url('GoogleSans-Regular.ttf') format('truetype'); font-weight:400; }
-    @font-face { font-family:'GoogleSans'; src:url('GoogleSans-Bold.ttf')    format('truetype'); font-weight:700; }
+    /* Fuentes servidas desde el propio sitio (SIL OFL 1.1, ver vendor/fonts/) */
+    @font-face { font-family:'Inter';     src:url('vendor/fonts/inter-latin-400.woff2')     format('woff2'); font-weight:400; font-display:swap; }
+    @font-face { font-family:'Inter';     src:url('vendor/fonts/inter-latin-700.woff2')     format('woff2'); font-weight:700; font-display:swap; }
+    @font-face { font-family:'Fira Code'; src:url('vendor/fonts/fira-code-latin-400.woff2') format('woff2'); font-weight:400; font-display:swap; }
+    @font-face { font-family:'Fira Code'; src:url('vendor/fonts/fira-code-latin-700.woff2') format('woff2'); font-weight:700; font-display:swap; }
 
     /* ── TOKENS: LIGHT (default) ── */
     :root {
@@ -37,7 +37,7 @@
     }
 
     * { margin:0; padding:0; box-sizing:border-box; }
-    html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--white); font-family:'GoogleSans',sans-serif; transition:background .25s,color .25s; }
+    html, body { height:100%; overflow:hidden; background:var(--bg); color:var(--white); font-family:'Inter',system-ui,sans-serif; transition:background .25s,color .25s; }
 
     /* ── NAV ── */
     nav {
@@ -94,7 +94,7 @@
     .ph {
       height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
       padding:0 14px; background:var(--panel); border-bottom:1px solid var(--border);
-      font-family:'GoogleSans',sans-serif; font-size:.82rem; font-weight:700; color:var(--white);
+      font-family:'Inter',system-ui,sans-serif; font-size:.82rem; font-weight:700; color:var(--white);
     }
     .ph-l       { display:flex; align-items:center; gap:8px; overflow:hidden; }
     .ph-l span  { white-space:nowrap; }
@@ -159,7 +159,7 @@
     }
     .chrome-warn i             { color:var(--red); font-size:1rem; flex-shrink:0; margin-top:2px; }
     .chrome-warn-body          { display:flex; flex-direction:column; gap:3px; }
-    .chrome-warn-title         { font-size:.78rem; font-weight:700; color:var(--red); font-family:'GoogleSans',sans-serif; }
+    .chrome-warn-title         { font-size:.78rem; font-weight:700; color:var(--red); font-family:'Inter',system-ui,sans-serif; }
     .chrome-warn-text          { font-size:.73rem; color:var(--muted); line-height:1.65; }
     .chrome-warn-text strong   { color:var(--white); }
 
@@ -258,7 +258,7 @@
     .sbox h3      { font-size:1rem; font-weight:700; color:var(--white); display:flex; align-items:center; gap:8px; }
     .sdivider     { border:none; border-top:1px solid var(--border); margin:0; }
     .sfield       { display:flex; flex-direction:column; gap:8px; }
-    .sfield > .slabel { font-size:.82rem; font-weight:700; color:var(--white); font-family:'GoogleSans',sans-serif; }
+    .sfield > .slabel { font-size:.82rem; font-weight:700; color:var(--white); font-family:'Inter',system-ui,sans-serif; }
     .sfield .hint { font-family:'Fira Code',monospace; font-size:.62rem; color:var(--dim); line-height:1.6; }
     .cfg-checks   { display:flex; flex-direction:column; gap:0; }
     .cfg-check-row {
@@ -357,3 +357,45 @@
 
     /* ── PROBABLE (SAMPLED) GROUPS ── */
     .probable-tag { font-size:.58rem; color:#fff; background:#b26b00; padding:1px 6px; border-radius:8px; margin-left:6px; font-family:'Fira Code',monospace; font-weight:700; vertical-align:middle; }
+
+    /* ── ELEMENTOS SIN ESTILOS INLINE (necesario para la CSP) ── */
+    .brand       { display:flex; align-items:baseline; gap:10px; }
+    .nav-byline  { font-family:'Inter',system-ui,sans-serif; font-weight:400; font-size:.67rem; color:var(--muted); }
+    .nav-algo    { font-family:'Fira Code',monospace; font-size:.62rem; color:var(--dim); }
+    #nav-folder, #limited-warn, #ok-screen, #vs-spacer, #btn-close-prev, #confirm-wrap, #btn-confirm-d { display:none; }
+    #scan-cnt    { font-family:'Fira Code',monospace; font-size:.66rem; color:var(--muted); font-weight:400; }
+    #feed-ph     { height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--dim); font-size:.75rem; text-align:center; pointer-events:none; font-family:'Fira Code',monospace; }
+    #feed-ph i   { font-size:1.8rem; }
+    .home-icon-sm { font-size:2rem; }
+    .ok-icon     { font-size:2.5rem; opacity:.3; }
+    .ph-icon     { font-size:.78rem; color:var(--red); }
+    .ph-r        { display:flex; align-items:center; gap:5px; min-width:0; }
+    #prev-lbl    { font-family:'Fira Code',monospace; font-size:.63rem; color:var(--muted); font-weight:400; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:110px; }
+    .prev-hint   { font-family:'Fira Code',monospace; font-size:.73rem; }
+    .accent      { color:var(--red); }
+    .accent-icon { color:var(--red); margin-right:7px; }
+    .ext-tag     { color:var(--muted); }
+
+    /* Vista previa */
+    .pv-head     { margin-bottom:12px; }
+    .pv-loading  { color:var(--dim); font-family:'Fira Code',monospace; font-size:.72rem; text-align:center; padding:20px; }
+    .pv-center   { text-align:center; }
+    .pv-img      { max-width:100%; max-height:calc(100vh - 160px); border-radius:4px; border:1px solid var(--border); display:block; margin:0 auto; }
+    .pv-video    { max-width:100%; max-height:calc(100vh - 200px); border-radius:4px; border:1px solid var(--border); display:block; margin:0 auto; background:#000; }
+    .pv-note     { font-family:'Fira Code',monospace; font-size:.6rem; color:var(--muted); margin-top:6px; text-align:right; }
+    .pv-audio-wrap { display:flex; flex-direction:column; align-items:center; gap:16px; padding:28px 14px; text-align:center; }
+    .pv-audio-wrap .pv-note { text-align:center; }
+    .pv-audio    { width:100%; max-width:270px; }
+    .pv-big-icon { font-size:3rem; color:var(--dim); }
+    .pv-pre      { font-family:'Fira Code',monospace; font-size:.72rem; line-height:1.65; color:var(--white); background:var(--code-bg); padding:12px; border-radius:4px; border:1px solid var(--border); white-space:pre-wrap; word-break:break-all; max-height:calc(100vh - 160px); overflow-y:auto; scrollbar-width:thin; scrollbar-color:var(--red) transparent; }
+    .pv-embed    { width:100%; height:calc(100vh - 160px); border:1px solid var(--border); border-radius:4px; }
+    .pv-bin      { display:flex; flex-direction:column; align-items:center; gap:14px; padding:28px 16px; text-align:center; }
+    .pv-bin .pv-big-icon { font-size:3.5rem; }
+    .pv-bin-ext  { font-size:1rem; font-weight:700; color:var(--white); }
+    .pv-bin-size { font-size:1.35rem; font-weight:700; color:var(--red); }
+    .pv-bin-note { font-family:'Fira Code',monospace; font-size:.63rem; color:var(--muted); max-width:220px; line-height:1.7; }
+    .pv-err      { color:var(--red); font-size:.72rem; font-family:'Fira Code',monospace; margin-top:8px; }
+
+    /* Foco visible con teclado */
+    :focus-visible { outline:2px solid var(--red); outline-offset:2px; }
+    .divider:focus-visible { background:var(--red); outline:none; }

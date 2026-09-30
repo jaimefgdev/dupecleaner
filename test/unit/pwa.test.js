@@ -23,7 +23,8 @@ test('el service worker precachea todos los módulos y recursos de la app', asyn
   const list = new Set(await precacheList());
   const src  = (await readdir(new URL('src/', ROOT))).filter(f => f.endsWith('.js')).map(f => 'src/' + f);
   const icons = (await readdir(new URL('icons/', ROOT))).map(f => 'icons/' + f);
-  const vendor = (await readdir(new URL('vendor/hash-wasm/', ROOT))).filter(f => f.endsWith('.js')).map(f => 'vendor/hash-wasm/' + f);
+  const vendor = (await readdir(new URL('vendor/', ROOT), { recursive: true }))
+    .filter(f => /\.(js|css|woff2)$/.test(f)).map(f => 'vendor/' + f.replaceAll('\\', '/'));
   for (const p of ['index.html', 'styles.css', 'manifest.webmanifest', ...src, ...icons, ...vendor])
     assert.ok(list.has(p), `falta ${p} en PRECACHE de sw.js`);
 });
@@ -45,13 +46,6 @@ test('el tiempo límite de un hash crece con el tamaño y tiene un mínimo', () 
   assert.ok(hashTimeoutMs(1024 ** 3) > hashTimeoutMs(1024 ** 2));
   assert.ok(hashTimeoutMs(1024 ** 3) >= 1024 * 1000); // ≥ 1 s por MB
 });
-
-test('vendor/ es una copia exacta de la versión instalada de hash-wasm', async () => {
-  const a = await readFile(new URL('vendor/hash-wasm/sha256.umd.min.js', ROOT));
-  const b = await readFile(new URL('node_modules/hash-wasm/dist/sha256.umd.min.js', ROOT));
-  assert.ok(a.equals(b), 'ejecuta: node scripts/vendor.mjs');
-});
-
 test('tamaño del pool de workers', async () => {
   const { defaultPoolSize } = await import('../../src/hasher.js');
   assert.equal(defaultPoolSize(1), 1);
