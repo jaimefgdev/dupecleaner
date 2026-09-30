@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { esc, extOf, fmtSize } from '../../src/format.js';
-import { isIgnoredDir, DEFAULT_CFG } from '../../src/filters.js';
+import { dirSkipReason, DEFAULT_CFG, SKIP } from '../../src/filters.js';
 import { QUARANTINE_DIR } from '../../src/quarantine.js';
 
 test('esc neutraliza todo lo que permite salir de texto o de un atributo', () => {
@@ -25,5 +25,6 @@ test('fmtSize', () => {
 });
 
 test('la carpeta de cuarentena nunca se escanea, sea cual sea la configuración', () => {
-  assert.equal(isIgnoredDir(QUARANTINE_DIR, { ...DEFAULT_CFG, ignoreDev: false, ignoreHidden: false }), true);
+  assert.equal(dirSkipReason(QUARANTINE_DIR, 1, null, { ...DEFAULT_CFG, ignoreDev: false, ignoreHidden: false }), SKIP.QUARANTINE);
+  assert.equal(dirSkipReason(QUARANTINE_DIR, 5, null, DEFAULT_CFG), SKIP.QUARANTINE);
 });

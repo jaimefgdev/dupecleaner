@@ -7,8 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>DupeCleaner</title>
-  <!-- PWA manifest injected as data URI by JS below -->
-  <link id="pwa-manifest" rel="manifest">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -133,8 +134,8 @@
           <div class="home-icon" style="font-size:2rem;"><i class="fas fa-folder-open"></i></div>
           <h3><span class="es">Carpeta seleccionada</span><span class="en">Folder selected</span></h3>
           <div class="confirm-path" id="confirm-path-text"></div>
-          <p class="es">Se escanearán todos los archivos de esta carpeta y sus subcarpetas. Solo se omiten las carpetas críticas del sistema operativo (Windows, macOS y Linux).</p>
-          <p class="en">All files in this folder and subfolders will be scanned. Only critical OS folders are skipped (Windows, macOS and Linux).</p>
+          <p class="es">Se escanearán todos los archivos de esta carpeta y sus subcarpetas. Solo se omiten las carpetas internas del sistema (papelera, índices…), las carpetas del sistema operativo si eliges la raíz de un disco, y lo que marques en Opciones. Todo lo omitido aparece en el registro.</p>
+          <p class="en">All files in this folder and its subfolders will be scanned. Only internal system folders (recycle bin, indexes…), OS folders when you pick a drive root, and what you choose in Settings are skipped. Everything skipped is shown in the log.</p>
           <div class="confirm-btns">
             <button class="btn-secondary" data-action="cancel-pick"><i class="fas fa-xmark"></i> <span class="es">Cancelar</span><span class="en">Cancel</span></button>
             <button class="btn-primary"   data-action="begin-scan"><i class="fas fa-magnifying-glass"></i> <span class="es">Iniciar escaneo</span><span class="en">Start scan</span></button>
