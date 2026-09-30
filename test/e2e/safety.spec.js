@@ -150,18 +150,27 @@ test('los nombres de archivo maliciosos se muestran como texto y no ejecutan có
 });
 
 test('detener y empezar otro escaneo enseguida no mezcla resultados', async ({ page }) => {
-  // Carpeta A: archivos de 20 MB (hash completo, ~1 s cada uno) para que el
-  // escaneo antiguo siga esperando un hash mientras empieza el nuevo.
-  const MB20 = 20 * MB;
-  await writeTree(page, 'A', { 'grande1.bin': { size: MB20 }, 'grande2.bin': { size: MB20 }, 'grande3.bin': { size: MB20 }, 'grande4.bin': { size: MB20 } });
+  // En la carpeta A, leer cada archivo tarda 1 s (simulado), así el escaneo
+  // antiguo sigue esperando dentro de getFile() mientras empieza el nuevo.
+  const specA = {};
+  for (let i = 0; i < 6; i++) specA[`lento${i}.txt`] = 'A';
+  await writeTree(page, 'A', specA);
   await writeTree(page, 'B', { 'uno.txt': 'B', 'dos.txt': 'B' });
+  await page.evaluate(() => {
+    const getFile = FileSystemFileHandle.prototype.getFile;
+    FileSystemFileHandle.prototype.getFile = async function () {
+      if (this.name.startsWith('lento')) await new Promise(r => setTimeout(r, 1000));
+      return getFile.call(this);
+    };
+  });
 
   await page.evaluate(() => { window.__pickDir = 'A'; });
   await page.click('#home [data-action="pick-folder"]');
   await page.click('[data-action="begin-scan"]');
-  await expect(page.locator('#feed')).toContainText(/⚡ grande\d\.bin/);
+  await expect(page.locator('#scan-lbl')).toHaveText(/recopilando/);
+  await page.waitForTimeout(1500); // A está esperando un getFile()
 
-  // Parar, reiniciar, elegir B y empezar mientras A sigue esperando un hash
+  // Parar, reiniciar, elegir B y empezar mientras A sigue esperando
   await page.evaluate(async () => {
     document.getElementById('btn-stop').click();
     document.getElementById('btn-reset').click();
@@ -171,12 +180,12 @@ test('detener y empezar otro escaneo enseguida no mezcla resultados', async ({ p
     document.querySelector('[data-action="begin-scan"]').click();
   });
   await expect(page.locator('#scan-lbl')).toHaveText(/completado/);
-  await page.waitForTimeout(6000); // lo que tardaría A en terminar sus hashes
+  await page.waitForTimeout(4000); // lo que tardaría A en seguir leyendo archivos
 
   await expect(page.locator('#nav-folder-name')).toHaveText('B');
   await expect(page.locator('#st-files')).toHaveText('2');
   await expect(page.locator('#dupe-badge')).toHaveText('1');
   await expect(page.locator('.dg')).toHaveCount(1);
   for (const p of await page.locator('.df-path').allInnerTexts()) expect(p).toBe('B');
-  expect(await page.locator('#feed').innerText()).not.toContain('grande');
+  expect(await page.locator('#feed').innerText()).not.toContain('lento');
 });

@@ -35,6 +35,9 @@ jobs:
       - name: Pruebas end-to-end (solo OPFS, nunca archivos reales)
         run: npm run test:e2e
 
+      - name: Prueba de rendimiento (anterior vs actual, datos generados en OPFS)
+        run: npm run test:perf
+
       - name: Informe de Playwright
         if: failure()
         uses: actions/upload-artifact@v4

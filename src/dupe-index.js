@@ -7,6 +7,9 @@ export class DupeIndex {
     this.files  = new Map(); // id → registro de archivo
     this.groups = new Map(); // key → { key, hash, size, sampled, files: [registro, ...] }
     this._seq   = 0;
+    // Contadores incrementales: consultarlos no recorre todos los grupos
+    this.dupGroupCount = 0;
+    this.recoverable   = 0;
   }
 
   /**
@@ -42,7 +45,12 @@ export class DupeIndex {
     let g = this.groups.get(key);
     if (!g) { g = { key, hash, size: rec.size, sampled: false, files: [] }; this.groups.set(key, g); }
     g.sampled = g.sampled || sampled;
-    g.files.push(rec);
+    // Orden de escaneo (id), así el original no depende de qué worker acabó antes
+    let i = g.files.length;
+    while (i > 0 && g.files[i - 1].id > rec.id) i--;
+    g.files.splice(i, 0, rec);
+    if (g.files.length === 2) this.dupGroupCount++;
+    if (g.files.length >= 2)  this.recoverable += g.size; // cada copia extra libera `size` bytes
     return g;
   }
 
@@ -53,9 +61,7 @@ export class DupeIndex {
 
   dupGroups() { return [...this.groups.values()].filter(g => g.files.length > 1); }
 
-  recoverableBytes() {
-    return this.dupGroups().reduce((s, g) => s + g.size * (g.files.length - 1), 0);
-  }
+  recoverableBytes() { return this.recoverable; }
 
   /**
    * Quita un archivo (tras moverlo o borrarlo). Devuelve el grupo y si ha
@@ -67,7 +73,10 @@ export class DupeIndex {
     this.files.delete(id);
     const group = this.groupOf(rec);
     if (!group) return { group: undefined, dissolved: false };
+    const before = group.files.length;
     group.files = group.files.filter(r => r.id !== id);
+    if (before >= 2) this.recoverable -= group.size;
+    if (before === 2) this.dupGroupCount--;
     const dissolved = group.files.length < 2;
     if (group.files.length === 0) this.groups.delete(group.key);
     return { group, dissolved };
