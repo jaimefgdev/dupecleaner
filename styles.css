@@ -206,11 +206,11 @@
     /* ── STATS BAR ── */
     #stats-bar  { min-height:40px; flex-shrink:0; display:flex; align-items:center; flex-wrap:wrap; gap:4px; padding:0 10px; border-top:1px solid var(--border); background:var(--panel); font-family:'Fira Code',monospace; font-size:.68rem; color:var(--muted); box-shadow:var(--shadow); }
     .sbar-left  { display:flex; align-items:center; gap:6px; }
-    .sbar-center { flex:1; display:flex; align-items:center; justify-content:center; min-width:0; }
-    .sbar-right { display:flex; align-items:center; gap:5px; }
+    .sbar-center { flex:1; display:flex; align-items:center; justify-content:center; min-width:max-content; }
+    .sbar-right { display:flex; align-items:center; gap:5px; margin-left:auto; }
     .sbar-val   { color:var(--white); font-weight:700; }
     .sbar-sep   { color:var(--dim); }
-    #sel-info   { display:none; font-family:'Fira Code',monospace; font-size:.68rem; color:var(--red-text); font-weight:700; }
+    #sel-info   { display:none; white-space:nowrap; font-family:'Fira Code',monospace; font-size:.68rem; color:var(--red-text); font-weight:700; }
     .sbar-btn   { background:transparent; border:1px solid var(--border2); color:var(--muted); padding:3px 9px; border-radius:3px; font-family:'Fira Code',monospace; font-size:.64rem; cursor:pointer; transition:all .18s; white-space:nowrap; }
     .sbar-btn:hover { border-color:var(--white); color:var(--white); }
     #btn-del    { background:var(--red-fill); border:1px solid var(--red-fill); color:#fff; padding:3px 10px; border-radius:3px; font-family:'Fira Code',monospace; font-size:.64rem; cursor:pointer; transition:all .18s; display:none; white-space:nowrap; }
