@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir, access } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { FILES as VENDORED } from '../../scripts/vendor.mjs';
 
 const ROOT = new URL('../../', import.meta.url);
@@ -52,7 +53,7 @@ test('la CSP no permite scripts ni estilos inline', async () => {
 
 test('lo que se publica en Pages incluye todo lo que precachea el service worker', async () => {
   const { siteFiles } = await import('../../scripts/build-site.mjs');
-  const published = new Set(await siteFiles(new URL('.', ROOT).pathname));
+  const published = new Set(await siteFiles(fileURLToPath(new URL('.', ROOT))));
   const sw = await read('sw.js');
   const pre = [...sw.match(/const PRECACHE = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g)].map(m => m[1]).filter(p => p !== './');
   for (const p of pre) assert.ok(published.has(p), `${p} no se publica`);

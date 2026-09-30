@@ -4,7 +4,7 @@ import { test, expect, writeTree, scanFolder, selectAllAndOpen, setOptions } fro
 
 const axe = page => new AxeBuilder({ page })
   .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-  .disableRules(['color-contrast']) // el contraste de la paleta se revisa aparte
+  .disableRules(['color-contrast']) // se comprueba en las pruebas de contraste, en los dos temas
   .analyze();
 
 const serious = r => r.violations
@@ -25,6 +25,40 @@ test('sin problemas de accesibilidad graves: inicio, resultados y diálogos', as
   await page.click('[data-action="open-settings"]');
   expect(serious(await axe(page))).toEqual([]);
 });
+
+// Contraste de color (WCAG AA) en las dos paletas y en todas las pantallas.
+const contrast = async page => {
+  // Termina cualquier transición de color para medir el estado final del tema.
+  await page.evaluate(() => document.getAnimations().forEach(a => { try { a.finish(); } catch { /* ya terminada */ } }));
+  const r = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
+  return r.violations.flatMap(v => v.nodes.map(n => `${n.target.join(' ')}: ${n.any.map(a => a.message).join(' ')}`));
+};
+
+for (const theme of ['light', 'dark']) {
+  test(`contraste AA en tema ${theme === 'dark' ? 'oscuro' : 'claro'}: inicio, resultados, vista previa, ajustes y quitar`, async ({ page }) => {
+    if (theme === 'dark') await page.click('[data-action="toggle-theme"]');
+    await expect(page.locator('body')).toHaveClass(theme === 'dark' ? /\bdark\b/ : /^(?!.*\bdark\b)/);
+    expect(await contrast(page)).toEqual([]);
+
+    await writeTree(page, 't', { 'a.txt': 'x', 'b.txt': 'x' });
+    await scanFolder(page, 't');
+    expect(await contrast(page)).toEqual([]);
+
+    await selectAllAndOpen(page);
+    expect(await contrast(page)).toEqual([]);
+    await page.keyboard.press('Escape');
+
+    await page.click('[data-action="select-all"]');
+    await page.focus('#btn-del');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#modal-ov')).toHaveClass(/on/);
+    expect(await contrast(page)).toEqual([]);
+    await page.keyboard.press('Escape');
+
+    await page.click('[data-action="open-settings"]');
+    expect(await contrast(page)).toEqual([]);
+  });
+}
 
 test('diálogo de quitar: foco dentro, Tab no se escapa, Esc cierra y devuelve el foco', async ({ page }) => {
   await writeTree(page, 't', { 'a.txt': 'x', 'b.txt': 'x' });
