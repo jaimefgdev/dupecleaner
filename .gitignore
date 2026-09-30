@@ -1,7 +1,6 @@
-__pycache__/ 
-venv/ 
-.vscode/ 
-index1.html 
 node_modules/
 test-results/
 playwright-report/
+_site/
+.vscode/
+index1.html

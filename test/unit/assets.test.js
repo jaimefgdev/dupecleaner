@@ -49,3 +49,12 @@ test('la CSP no permite scripts ni estilos inline', async () => {
   assert.doesNotMatch(html, /\sstyle="/);               // sin estilos inline
   assert.doesNotMatch(html, /<script>(?!<\/script>)/);  // sin scripts inline
 });
+
+test('lo que se publica en Pages incluye todo lo que precachea el service worker', async () => {
+  const { siteFiles } = await import('../../scripts/build-site.mjs');
+  const published = new Set(await siteFiles(new URL('.', ROOT).pathname));
+  const sw = await read('sw.js');
+  const pre = [...sw.match(/const PRECACHE = \[([\s\S]*?)\];/)[1].matchAll(/'([^']+)'/g)].map(m => m[1]).filter(p => p !== './');
+  for (const p of pre) assert.ok(published.has(p), `${p} no se publica`);
+  for (const p of published) assert.doesNotMatch(p, /^(test|node_modules|scripts)\//);
+});

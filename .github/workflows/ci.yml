@@ -1,16 +1,16 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request:
+  # En main las pruebas las lanza pages.yml antes de desplegar
+  workflow_call:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
