@@ -5,6 +5,7 @@
 // en el primer nivel. Así una carpeta "lib", "bin" o "system" dentro de un
 // proyecto o de Documentos se escanea con normalidad.
 import { QUARANTINE_DIR } from './quarantine.js';
+import { extOf } from './format.js';
 
 /* Carpetas de sistema por SO, bloqueadas solo en el primer nivel de una raíz de sistema */
 export const SYSTEM_ROOT_DIRS = {
@@ -78,8 +79,17 @@ export function dirSkipReason(name, depth, systemRoot, cfg) {
   return null;
 }
 
-export const isIgnoredFile = (name, cfg) => {
-  if (!cfg.ignoreSysFiles) return false;
-  const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-  return SYS_EXTENSIONS.has(ext);
-};
+export const isIgnoredFile = (name, cfg) => cfg.ignoreSysFiles && SYS_EXTENSIONS.has(extOf(name));
+
+/** Opciones guardadas (JSON de localStorage) validadas; lo desconocido o inválido se ignora */
+export function parseStoredCfg(json) {
+  let raw;
+  try { raw = JSON.parse(json); } catch { return {}; }
+  if (!raw || typeof raw !== 'object') return {};
+  const out = {};
+  for (const k of ['ignoreDev', 'ignoreHidden', 'ignoreSysFiles'])
+    if (typeof raw[k] === 'boolean') out[k] = raw[k];
+  if (Number.isFinite(raw.minFileSize) && raw.minFileSize >= 0) out.minFileSize = Math.round(raw.minFileSize);
+  if (raw.strategy === 'sample' || raw.strategy === 'full') out.strategy = raw.strategy;
+  return out;
+}

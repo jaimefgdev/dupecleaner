@@ -2,10 +2,9 @@
 // - Al instalarse guarda en caché todos los archivos de la app (PRECACHE).
 // - Archivos propios: primero la red (siempre la versión más reciente si hay
 //   conexión) y, sin conexión, la copia en caché.
-// - Recursos de CDN (iconos, fuentes): primero la caché.
 // Al cambiar cualquier archivo de la app, sube VERSION para renovar la caché.
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE   = 'dupecleaner-' + VERSION;
 
 const PRECACHE = [
@@ -13,8 +12,13 @@ const PRECACHE = [
   'index.html',
   'styles.css',
   'manifest.webmanifest',
-  'GoogleSans-Regular.ttf',
-  'GoogleSans-Bold.ttf',
+  'vendor/fonts/inter-latin-400.woff2',
+  'vendor/fonts/inter-latin-700.woff2',
+  'vendor/fonts/fira-code-latin-400.woff2',
+  'vendor/fonts/fira-code-latin-700.woff2',
+  'vendor/fontawesome/css/fontawesome.min.css',
+  'vendor/fontawesome/css/solid.min.css',
+  'vendor/fontawesome/webfonts/fa-solid-900.woff2',
   'icons/icon.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -71,20 +75,6 @@ self.addEventListener('fetch', evt => {
           || Response.error();
       }
     })());
-    return;
   }
-
-  // CDN: caché primero
-  evt.respondWith((async () => {
-    const cache  = await caches.open(CACHE);
-    const cached = await cache.match(req);
-    if (cached) return cached;
-    try {
-      const resp = await fetch(req);
-      if (resp.ok || resp.type === 'opaque') cache.put(req, resp.clone());
-      return resp;
-    } catch {
-      return Response.error();
-    }
-  })());
+  // Otros orígenes: sin intervención (la app no usa ninguno)
 });
