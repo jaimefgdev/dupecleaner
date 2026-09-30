@@ -49,3 +49,12 @@ test('extensiones de sistema solo si se activa la opción', () => {
   assert.equal(isIgnoredFile('a.DLL', { ...cfg, ignoreSysFiles: true }), true);
   assert.equal(isIgnoredFile('foto.jpg', { ...cfg, ignoreSysFiles: true }), false);
 });
+
+test('las opciones guardadas se validan: lo raro se ignora', async () => {
+  const { parseStoredCfg } = await import('../../src/filters.js');
+  assert.deepEqual(parseStoredCfg(null), {});
+  assert.deepEqual(parseStoredCfg('no es json'), {});
+  assert.deepEqual(parseStoredCfg('{"ignoreDev":"sí","minFileSize":-5,"strategy":"turbo","x":1}'), {});
+  assert.deepEqual(parseStoredCfg('{"ignoreHidden":true,"minFileSize":1024.4,"strategy":"full"}'),
+                   { ignoreHidden: true, minFileSize: 1024, strategy: 'full' });
+});

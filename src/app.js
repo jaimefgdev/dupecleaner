@@ -4,7 +4,7 @@ import { isSampled, needsPrefix } from './sha256.js';
 import { DupeIndex } from './dupe-index.js';
 import { planRemoval, verifyBeforeRemoval, REFUSE } from './safety.js';
 import { moveToQuarantine, removeFile } from './quarantine.js';
-import { DEFAULT_CFG, SKIP, detectSystemRoot, dirSkipReason, isIgnoredFile } from './filters.js';
+import { DEFAULT_CFG, SKIP, detectSystemRoot, dirSkipReason, isIgnoredFile, parseStoredCfg } from './filters.js';
 import { esc, fmtSize, extOf, getIcon, isImg, isTxt, isVideo, isAudio, isPdf } from './format.js';
 import { VirtualScroller } from './virtual-scroller.js';
 
@@ -99,7 +99,7 @@ function renderGroupCard(el, key) {
         <span class="h">${esc(g.hash.substring(0, 14))}&hellip;</span>${prob}
         &nbsp;&middot;&nbsp;${g.files.length} ${esc(g.sampled ? t('copias probables', 'probable copies') : t('copias idénticas', 'identical copies'))}
         &nbsp;&middot;&nbsp;${fmtSize(g.size)} ${esc(t('c/u', 'each'))}
-        ${ext ? `&nbsp;&middot;&nbsp;<span style="color:var(--muted)">.${esc(ext)}</span>` : ''}
+        ${ext ? `&nbsp;&middot;&nbsp;<span class="ext-tag">.${esc(ext)}</span>` : ''}
       </span>
       <span class="sv" title="${esc(t('espacio recuperable', 'space freed by removing copies'))}">
         &larr; ${fmtSize(g.size * (g.files.length - 1))}
@@ -121,7 +121,7 @@ function renderGroupCard(el, key) {
         <div class="df-name">${esc(r.name)}${isOrig ? `<span class="orig-tag">${esc(t('original', 'original'))}</span>` : ''}</div>
         <div class="df-path">${esc(r.dir)}</div>
       </div>
-      <button class="btn-eye" data-action="preview" data-id="${r.id}" title="${esc(t('Vista previa', 'Preview'))}">
+      <button class="btn-eye" data-action="preview" data-id="${r.id}" title="${esc(t('Vista previa', 'Preview'))}" aria-label="${esc(t('Vista previa de ', 'Preview ') + r.name)}">
         <i class="fas fa-eye"></i>
       </button>
     </div>`;
@@ -133,12 +133,15 @@ function renderGroupCard(el, key) {
 /* ═══════════════════════════════════════════════════════════
    BOOTSTRAP — theme, compat banner
 ═══════════════════════════════════════════════════════════ */
-try {
-  if (localStorage.getItem('dc-theme') === 'dark') {
-    document.body.classList.add('dark');
-    $('theme-icon').className = 'fas fa-sun';
-  }
-} catch { /* sin localStorage: tema por defecto */ }
+/* Preferencias guardadas en este navegador (tema, idioma, opciones de escaneo) */
+function load(key) { try { return localStorage.getItem(key); } catch { return null; } }
+function store(key, value) { try { localStorage.setItem(key, value); } catch { /* sin localStorage: no persiste */ } }
+
+if (load('dc-theme') === 'dark') {
+  document.body.classList.add('dark');
+  $('theme-icon').className = 'fas fa-sun';
+}
+Object.assign(cfg, parseStoredCfg(load('dc-cfg')));
 
 function updateCompatNote() {
   $('compat-note').textContent = hasFSAPI()
@@ -151,11 +154,57 @@ updateCompatNote();
 if (!hasFSAPI()) $('limited-warn').style.display = 'block';
 
 function showScreen(name) {
-  $('home').style.display         = name === 'home'    ? '' : 'none';
-  $('confirm-step').style.display = name === 'confirm' ? 'flex' : 'none';
-  $('ok-screen').style.display    = name === 'ok'      ? 'flex' : 'none';
-  $('vs-spacer').style.display    = name === 'vs'      ? '' : 'none';
+  $('home').style.display         = name === 'home'    ? 'flex'  : 'none';
+  $('confirm-step').style.display = name === 'confirm' ? 'flex'  : 'none';
+  $('ok-screen').style.display    = name === 'ok'      ? 'flex'  : 'none';
+  $('vs-spacer').style.display    = name === 'vs'      ? 'block' : 'none';
 }
+
+function setProgress(pct) {
+  const v = Math.round(Math.max(0, Math.min(100, pct)));
+  $('pbar').style.width = v + '%';
+  $('pbar-wrap').setAttribute('aria-valuenow', v);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DIÁLOGOS ACCESIBLES
+   Foco dentro del diálogo, Tab no se escapa, Esc cierra y al cerrar el
+   foco vuelve al botón que lo abrió. El resto de la página queda inerte.
+═══════════════════════════════════════════════════════════ */
+let dialog = null; // { ov, opener, onClose }
+const BACKGROUND = () => [document.querySelector('nav'), document.querySelector('.app-body'), $('mobile-feed-btn')];
+
+const focusables = root => [...root.querySelectorAll(
+  'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+)].filter(el => !el.disabled && el.getClientRects().length > 0);
+
+function openDialog(ov, onClose, focusEl) {
+  if (dialog && dialog.ov !== ov) dialog.onClose();
+  dialog = { ov, opener: dialog?.opener ?? document.activeElement, onClose };
+  ov.classList.add('on');
+  for (const el of BACKGROUND()) el.inert = true;
+  (focusEl || focusables(ov)[0])?.focus();
+}
+
+function closeDialog(ov) {
+  ov.classList.remove('on');
+  if (dialog?.ov !== ov) return;
+  const opener = dialog.opener;
+  dialog = null;
+  for (const el of BACKGROUND()) el.inert = false;
+  if (opener && document.contains(opener)) opener.focus();
+}
+
+document.addEventListener('keydown', e => {
+  if (!dialog) return;
+  if (e.key === 'Escape') { e.preventDefault(); dialog.onClose(); return; }
+  if (e.key !== 'Tab') return;
+  const els = focusables(dialog.ov);
+  if (!els.length) return;
+  const first = els[0], last = els[els.length - 1];
+  if (e.shiftKey && document.activeElement === first)      { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 
 /* ═══════════════════════════════════════════════════════════
    EVENT WIRING  (sin manejadores inline)
@@ -214,11 +263,12 @@ $('mobile-input').addEventListener('change', function () {
 function toggleTheme() {
   const dark = document.body.classList.toggle('dark');
   $('theme-icon').className = dark ? 'fas fa-sun' : 'fas fa-moon';
-  try { localStorage.setItem('dc-theme', dark ? 'dark' : 'light'); } catch { /* no persistente */ }
+  store('dc-theme', dark ? 'dark' : 'light');
 }
 
 function toggleLang() {
   const isEs = document.body.classList.contains('es');
+  store('dc-lang', isEs ? 'en' : 'es');
   document.body.classList.toggle('es', !isEs);
   document.body.classList.toggle('en',  isEs);
   document.documentElement.lang = isEs ? 'en' : 'es';
@@ -273,10 +323,10 @@ function openSettings() {
   $('cfg-minunit').value = unitVal;
 
   selectPrecision(cfg.strategy);
-  $('settings-ov').classList.add('on');
+  openDialog($('settings-ov'), closeSettings);
 }
 
-function closeSettings() { $('settings-ov').classList.remove('on'); }
+function closeSettings() { closeDialog($('settings-ov')); }
 
 function saveSettings() {
   cfg.ignoreDev      = $('cfg-dev').checked;
@@ -287,6 +337,7 @@ function saveSettings() {
   const unitMult = parseInt($('cfg-minunit').value, 10) || 1;
   cfg.minFileSize = Math.max(0, Math.round(sizeVal * unitMult));
   cfg.strategy    = document.querySelector('input[name="cfg-strategy"]:checked')?.value || 'sample';
+  store('dc-cfg', JSON.stringify(cfg));
 
   closeSettings();
 }
@@ -307,18 +358,25 @@ function addExtToFilter(ext) {
   chip.dataset.ext    = ext;
   chip.dataset.action = 'filter';
   chip.textContent    = ext ? '.' + ext : t('sin extensión', 'no extension');
+  chip.setAttribute('aria-pressed', 'false');
   bar.appendChild(chip);
+}
+
+function setChip(el, on) {
+  if (!el) return;
+  el.classList.toggle('active', on);
+  el.setAttribute('aria-pressed', String(on));
 }
 
 function setFilter(ext, el) {
   if (ext === 'all') {
     activeFilters.clear();
-    document.querySelectorAll('.fmt-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
+    document.querySelectorAll('.fmt-chip').forEach(c => setChip(c, false));
+    setChip(el, true);
   } else {
     activeFilters.has(ext) ? activeFilters.delete(ext) : activeFilters.add(ext);
-    el.classList.toggle('active', activeFilters.has(ext));
-    document.querySelector('.fmt-chip.all')?.classList.toggle('active', activeFilters.size === 0);
+    setChip(el, activeFilters.has(ext));
+    setChip(document.querySelector('.fmt-chip.all'), activeFilters.size === 0);
   }
   vs.setFilter(activeFilters);
 }
@@ -328,26 +386,39 @@ function resetFilterBar() {
   const fb = $('filter-bar');
   fb.classList.remove('visible');
   fb.querySelectorAll('.fmt-chip:not(.all)').forEach(c => c.remove());
-  fb.querySelector('.fmt-chip.all')?.classList.add('active');
+  setChip(fb.querySelector('.fmt-chip.all'), true);
 }
 
 /* ═══════════════════════════════════════════════════════════
    RESIZABLE PANELS
 ═══════════════════════════════════════════════════════════ */
+function resizePair(L, R, w0L, w0R, dx) {
+  dx = Math.max(100 - w0L, Math.min(w0R - 100, dx)); // ningún panel por debajo de 100 px
+  L.style.flex = 'none'; L.style.width = (w0L + dx) + 'px';
+  R.style.flex = 'none'; R.style.width = (w0R - dx) + 'px';
+}
+
+/* Separadores redimensionables con ratón y con teclado (flechas) */
 function makeDivider(divId, leftId, rightId) {
   const div = $(divId);
   const L   = $(leftId);
   const R   = $(rightId);
+  // Un separador enfocable debe decir su posición (% del par que ocupa el panel izquierdo)
+  const report = () => {
+    const l = L.getBoundingClientRect().width, r = R.getBoundingClientRect().width;
+    div.setAttribute('aria-valuenow', Math.round(100 * l / Math.max(1, l + r)));
+  };
+  div.setAttribute('aria-valuemin', '0');
+  div.setAttribute('aria-valuemax', '100');
+  report();
+  new ResizeObserver(report).observe(L);
   div.addEventListener('mousedown', e => {
     e.preventDefault();
     const x0  = e.clientX;
     const w0L = L.getBoundingClientRect().width;
     const w0R = R.getBoundingClientRect().width;
     div.classList.add('drag');
-    const mv = ev => {
-      L.style.cssText += `;flex:none;width:${Math.max(100, w0L + ev.clientX - x0)}px`;
-      R.style.cssText += `;flex:none;width:${Math.max(100, w0R - (ev.clientX - x0))}px`;
-    };
+    const mv = ev => resizePair(L, R, w0L, w0R, ev.clientX - x0);
     const up = () => {
       div.classList.remove('drag');
       document.removeEventListener('mousemove', mv);
@@ -355,6 +426,13 @@ function makeDivider(divId, leftId, rightId) {
     };
     document.addEventListener('mousemove', mv);
     document.addEventListener('mouseup',   up);
+  });
+  div.addEventListener('keydown', e => {
+    const step = e.shiftKey ? 50 : 10;
+    const dx   = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
+    if (!dx) return;
+    e.preventDefault();
+    resizePair(L, R, L.getBoundingClientRect().width, R.getBoundingClientRect().width, dx);
   });
 }
 makeDivider('div-1', 'panel-left', 'panel-mid');
@@ -464,7 +542,7 @@ async function runScan(s) {
   $('nav-folder-name').textContent = s.name;
   $('btn-stop').style.display      = 'flex';
   $('btn-reset').style.display     = 'none';
-  $('pbar').style.width            = '0%';
+  setProgress(0);
   updateStats(); updateSelectionUI();
 
   setDot('run', t('recopilando archivos…', 'collecting files…'));
@@ -483,7 +561,7 @@ async function runScan(s) {
 
   s.done = true;
   setDot('idle', t('completado', 'done'));
-  $('pbar').style.width        = '100%';
+  setProgress(100);
   $('btn-stop').style.display  = 'none';
   $('btn-reset').style.display = 'flex';
 
@@ -529,7 +607,7 @@ const skipLabel = r => t(...SKIP_LABEL[r]);
 function showOkScreen(s) {
   const okEl = $('ok-screen');
   okEl.innerHTML = `
-    <div class="home-icon" style="font-size:2.5rem;opacity:.3;"><i class="fas fa-circle-check"></i></div>
+    <div class="home-icon ok-icon"><i class="fas fa-circle-check"></i></div>
     <h2 class="es">¡Sin duplicados!</h2><h2 class="en">No duplicates!</h2>
     <p class="es">No quedan archivos idénticos en <strong>${esc(s.name)}</strong>.</p>
     <p class="en">No identical files left in <strong>${esc(s.name)}</strong>.</p>
@@ -684,8 +762,7 @@ async function findDupes(s) {
     feedLine(t('⚡ Modo muestras activo para archivos > 20 MB', '⚡ Sampling mode active for files > 20 MB'), 'info');
   await breathe();
 
-  const $pb = $('pbar');
-  const progress = (from, to, done, n) => { $pb.style.width = Math.round(from + (to - from) * done / Math.max(1, n)) + '%'; };
+  const progress = (from, to, done, n) => setProgress(from + (to - from) * done / Math.max(1, n));
 
   // Fase 1 — prefiltro: hash de los primeros 64 KB de los archivos grandes.
   // Los que no coinciden con nadie ya no se leen enteros.
@@ -868,11 +945,11 @@ async function previewFile(id) {
   $('prev-lbl').textContent = fi.name;
 
   $c.innerHTML = `
-    <div style="margin-bottom:12px;">
+    <div class="pv-head">
       <div class="pv-name">${esc(fi.name)}</div>
       <div class="pv-meta">${esc(fi.dir)} &nbsp;&middot;&nbsp; <span class="ac">${fmtSize(fi.size)}</span></div>
     </div>
-    <div id="pv-loading" style="color:var(--dim);font-family:'Fira Code',monospace;font-size:.72rem;text-align:center;padding:20px;">
+    <div id="pv-loading" class="pv-loading">
       ${esc(t('Cargando…', 'Loading…'))}
     </div>`;
 
@@ -886,9 +963,9 @@ async function previewFile(id) {
     if (isImg(fi.name)) {
       const url  = URL.createObjectURL(file);
       const wrap = document.createElement('div');
-      wrap.style.cssText = 'text-align:center;';
+      wrap.className = 'pv-center';
       const img  = document.createElement('img');
-      img.style.cssText  = 'max-width:100%;max-height:calc(100vh - 160px);border-radius:4px;border:1px solid var(--border);display:block;margin:0 auto;';
+      img.className = 'pv-img';
       img.src    = url; img.alt = fi.name;
       img.onload = img.onerror = () => URL.revokeObjectURL(url);
       wrap.appendChild(img); $c.appendChild(wrap);
@@ -897,29 +974,28 @@ async function previewFile(id) {
       const url   = URL.createObjectURL(file);
       const video = document.createElement('video');
       video.controls = true; video.preload = 'metadata';
-      video.style.cssText = 'max-width:100%;max-height:calc(100vh - 200px);border-radius:4px;border:1px solid var(--border);display:block;margin:0 auto;background:#000;';
+      video.className = 'pv-video';
       video.src = url;
       video.addEventListener('error', () => URL.revokeObjectURL(url), { once: true });
       $c.appendChild(video);
       const note = document.createElement('div');
-      note.style.cssText = 'font-family:"Fira Code",monospace;font-size:.6rem;color:var(--muted);margin-top:7px;text-align:right;';
+      note.className = 'pv-note';
       note.textContent   = '.' + extOf(fi.name) + ' · ' + fmtSize(fi.size);
       $c.appendChild(note);
 
     } else if (isAudio(fi.name)) {
       const url   = URL.createObjectURL(file);
       const wrap  = document.createElement('div');
-      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:28px 14px;text-align:center;';
+      wrap.className = 'pv-audio-wrap';
       const ico   = document.createElement('i');
-      ico.className      = getIcon(fi.name);
-      ico.style.cssText  = 'font-size:3rem;color:var(--dim);';
+      ico.className      = getIcon(fi.name) + ' pv-big-icon';
       const audio = document.createElement('audio');
       audio.controls = true; audio.preload = 'metadata';
-      audio.style.cssText = 'width:100%;max-width:270px;';
+      audio.className = 'pv-audio';
       audio.src = url;
       audio.addEventListener('error', () => URL.revokeObjectURL(url), { once: true });
       const note = document.createElement('div');
-      note.style.cssText = 'font-family:"Fira Code",monospace;font-size:.62rem;color:var(--muted);';
+      note.className = 'pv-note';
       note.textContent   = '.' + extOf(fi.name) + ' · ' + fmtSize(fi.size);
       wrap.appendChild(ico); wrap.appendChild(audio); wrap.appendChild(note);
       $c.appendChild(wrap);
@@ -928,11 +1004,11 @@ async function previewFile(id) {
       const text = await file.text();
       const ext  = extOf(fi.name);
       const pre  = document.createElement('pre');
-      pre.style.cssText  = `font-family:'Fira Code',monospace;font-size:.72rem;line-height:1.65;color:var(--white);background:var(--code-bg);padding:12px;border-radius:4px;border:1px solid var(--border);white-space:pre-wrap;word-break:break-all;max-height:calc(100vh - 160px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--red) transparent;`;
+      pre.className = 'pv-pre';
       pre.textContent    = text.length > 12000 ? text.substring(0, 12000) + '\n… (' + t('truncado', 'truncated') + ')' : text;
       $c.appendChild(pre);
       const note = document.createElement('div');
-      note.style.cssText = 'font-family:"Fira Code",monospace;font-size:.6rem;color:var(--muted);margin-top:5px;text-align:right;';
+      note.className = 'pv-note';
       note.textContent   = (ext ? '.' + ext : t('sin extensión', 'no ext')) + ' · ' + fmtSize(fi.size);
       $c.appendChild(note);
 
@@ -940,7 +1016,7 @@ async function previewFile(id) {
       const url   = URL.createObjectURL(file);
       const embed = document.createElement('embed');
       embed.src  = url; embed.type = 'application/pdf';
-      embed.style.cssText = 'width:100%;height:calc(100vh - 160px);border:1px solid var(--border);border-radius:4px;';
+      embed.className = 'pv-embed';
       $c.appendChild(embed);
 
     } else {
@@ -951,18 +1027,18 @@ async function previewFile(id) {
         : t('Archivo binario — sin previsualización.<br>Contenido byte a byte idéntico al del resto de copias (mismo SHA-256).',
             'Binary file — no preview available.<br>Content is byte-for-byte identical to all other copies (same SHA-256).');
       const d = document.createElement('div');
-      d.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 16px;text-align:center;';
+      d.className = 'pv-bin';
       d.innerHTML = `
-        <i class="${getIcon(fi.name)}" style="font-size:3.5rem;color:var(--dim);"></i>
-        <div style="font-size:1rem;font-weight:700;color:var(--white);">${ext ? '.' + esc(ext) : esc(t('sin extensión', 'no extension'))}</div>
-        <div style="font-size:1.35rem;font-weight:700;color:var(--red);">${fmtSize(fi.size)}</div>
-        <div style="font-family:'Fira Code',monospace;font-size:.63rem;color:var(--muted);max-width:220px;line-height:1.7;">${note}</div>`;
+        <i class="${getIcon(fi.name)} pv-big-icon"></i>
+        <div class="pv-bin-ext">${ext ? '.' + esc(ext) : esc(t('sin extensión', 'no extension'))}</div>
+        <div class="pv-bin-size">${fmtSize(fi.size)}</div>
+        <div class="pv-bin-note">${note}</div>`;
       $c.appendChild(d);
     }
   } catch (e) {
     $('pv-loading')?.remove();
     const err = document.createElement('div');
-    err.style.cssText = "color:var(--red);font-size:.72rem;font-family:'Fira Code',monospace;margin-top:8px;";
+    err.className = 'pv-err';
     err.textContent   = t('Error al cargar', 'Error loading') + ': ' + errMsg(e);
     $c.appendChild(err);
   }
@@ -998,7 +1074,7 @@ function resetApp() {
 
   setDot('idle', t('inactivo', 'idle'));
   $('scan-cnt').textContent    = '';
-  $('pbar').style.width        = '0%';
+  setProgress(0);
   $('btn-stop').style.display  = 'none';
   $('btn-reset').style.display = 'none';
   $('nav-folder').style.display = 'none';
@@ -1029,7 +1105,7 @@ function openModal() {
   setDelMode('quarantine');
   $('modal-input').value = '';
   updateConfirmState();
-  $('modal-ov').classList.add('on');
+  openDialog($('modal-ov'), closeModal, document.querySelector('input[name="del-mode"]:checked'));
 }
 
 function setDelMode(mode) {
@@ -1037,8 +1113,8 @@ function setDelMode(mode) {
   $('mode-quarantine').classList.toggle('selected', !del);
   $('mode-delete').classList.toggle('selected', del);
   $('confirm-wrap').style.display  = del ? 'block' : 'none';
-  $('btn-confirm-q').style.display = del ? 'none' : '';
-  $('btn-confirm-d').style.display = del ? '' : 'none';
+  $('btn-confirm-q').style.display = del ? 'none' : 'inline';
+  $('btn-confirm-d').style.display = del ? 'inline' : 'none';
   $('btn-confirm-icon').className  = del ? 'fas fa-trash-alt' : 'fas fa-box-archive';
   if (del) $('modal-input').focus();
   updateConfirmState();
@@ -1050,7 +1126,7 @@ function updateConfirmState() {
   $('btn-confirm').disabled = removalMode() === 'delete' && !confirmTyped();
 }
 
-function closeModal() { $('modal-ov').classList.remove('on'); }
+function closeModal() { closeDialog($('modal-ov')); }
 
 const REASON_TEXT = {
   [REFUSE.KEEPER]:          ['es el original que se conserva', 'it is the original being kept'],
@@ -1137,6 +1213,8 @@ async function execRemoval() {
   );
   if (s.index.dupGroups().length === 0) showOkScreen(s);
 }
+
+if (load('dc-lang') === 'en') toggleLang();
 
 /* ═══════════════════════════════════════════════════════════
    PWA — manifest.webmanifest + sw.js (funciona sin conexión tras la primera carga)

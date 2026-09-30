@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Solo recursos propios: nada de CDN, scripts inline ni estilos inline -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' blob:; media-src 'self' blob:; object-src 'self' blob:; frame-src 'self' blob:; connect-src 'self'; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
   <meta name="theme-color" content="#ff0033">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,33 +13,34 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/fontawesome.min.css">
+  <link rel="stylesheet" href="vendor/fontawesome/css/solid.min.css">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="es">
 
-<input type="file" id="mobile-input" webkitdirectory multiple>
+<input type="file" id="mobile-input" webkitdirectory multiple aria-label="Seleccionar carpeta / Select folder">
 <button id="mobile-feed-btn" data-action="toggle-feed" title="Toggle log" aria-label="Toggle feed">
   <i class="fas fa-terminal"></i>
 </button>
 
 <!-- NAV -->
 <nav>
-  <div style="display:flex;align-items:baseline;gap:10px;">
+  <div class="brand">
     <div class="logo">dupe<span>cleaner</span></div>
-    <div class="nav-byline" style="font-family:'GoogleSans',sans-serif;font-weight:400;font-size:.67rem;color:var(--muted);">by jaimefg1888</div>
+    <div class="nav-byline">by jaimefg1888</div>
   </div>
   <div class="nav-right">
-    <button class="lang-switch" id="lang-btn" data-action="toggle-lang">
+    <button class="lang-switch" id="lang-btn" data-action="toggle-lang" aria-label="Idioma / Language">
       <i class="fas fa-globe"></i><span class="es">ESP</span><span class="en">ENG</span>
     </button>
-    <button class="icon-btn" id="settings-btn" data-action="open-settings" title="Opciones / Settings">
+    <button class="icon-btn" id="settings-btn" data-action="open-settings" title="Opciones / Settings" aria-label="Opciones / Settings">
       <i class="fas fa-gear"></i>
     </button>
-    <button class="icon-btn" id="theme-btn" data-action="toggle-theme" title="Tema / Theme">
+    <button class="icon-btn" id="theme-btn" data-action="toggle-theme" title="Tema / Theme" aria-label="Tema / Theme">
       <i class="fas fa-moon" id="theme-icon"></i>
     </button>
-    <div class="nav-folder" id="nav-folder" style="display:none;">
+    <div class="nav-folder" id="nav-folder">
       <i class="fas fa-folder"></i><span id="nav-folder-name"></span>
     </div>
     <button class="nbtn" id="btn-stop" data-action="stop-scan">
@@ -45,13 +49,12 @@
     <button class="nbtn" id="btn-reset" data-action="reset">
       <i class="fas fa-rotate-left"></i> <span class="es">Nuevo escaneo</span><span class="en">New scan</span>
     </button>
-    <div style="font-family:'Fira Code',monospace;font-size:.62rem;color:var(--dim);" class="es">SHA-256</div>
-    <div style="font-family:'Fira Code',monospace;font-size:.62rem;color:var(--dim);" class="en">SHA-256</div>
+    <div class="nav-algo">SHA-256</div>
   </div>
 </nav>
 
 <div class="app-body">
-  <div id="pbar-wrap"><div id="pbar"></div></div>
+  <div id="pbar-wrap" role="progressbar" aria-label="Progreso / Progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="pbar"></div></div>
   <div class="panels-row">
 
     <!-- LEFT: live scan log feed -->
@@ -59,20 +62,20 @@
       <div class="ph">
         <div class="ph-l">
           <div class="dot d-idle" id="scan-dot"></div>
-          <span id="scan-lbl"><span class="es">inactivo</span><span class="en">idle</span></span>
+          <span id="scan-lbl" role="status" aria-live="polite"><span class="es">inactivo</span><span class="en">idle</span></span>
         </div>
-        <span id="scan-cnt" style="font-family:'Fira Code',monospace;font-size:.66rem;color:var(--muted);font-weight:400;"></span>
+        <span id="scan-cnt"></span>
       </div>
-      <div id="feed">
-        <div id="feed-ph" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--dim);font-size:.75rem;text-align:center;pointer-events:none;font-family:'Fira Code',monospace;">
-          <i class="fas fa-terminal" style="font-size:1.8rem;"></i>
+      <div id="feed" role="log" aria-label="Registro del escaneo / Scan log">
+        <div id="feed-ph">
+          <i class="fas fa-terminal"></i>
           <span class="es">El registro aparecerá<br>aquí durante el escaneo</span>
           <span class="en">The log will appear<br>here during the scan</span>
         </div>
       </div>
     </div>
 
-    <div class="divider" id="div-1"></div>
+    <div class="divider" id="div-1" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Redimensionar paneles / Resize panels"></div>
 
     <!-- MID: duplicate groups list -->
     <div class="panel" id="panel-mid">
@@ -89,13 +92,13 @@
       <div id="filter-bar">
         <span class="filter-label es">formato:</span>
         <span class="filter-label en">format:</span>
-        <button class="fmt-chip all active" data-ext="all" data-action="filter">
+        <button class="fmt-chip all active" data-ext="all" data-action="filter" aria-pressed="true">
           <span class="es">todos</span><span class="en">all</span>
         </button>
       </div>
 
       <!-- Scrollable container. position:relative required for VS absolute children. -->
-      <div id="dupes-scroll">
+      <div id="dupes-scroll" tabindex="-1">
 
         <!-- ① HOME SCREEN — shown at startup and after reset -->
         <div id="home">
@@ -123,7 +126,7 @@
             </div>
           </div>
           <p class="home-note" id="compat-note"></p>
-          <div id="limited-warn" style="display:none;" class="home-warn">
+          <div id="limited-warn" class="home-warn">
             <span class="es"><i class="fas fa-circle-info"></i> Tu navegador no permite eliminar archivos desde la web.<br>El escaneo funciona con total normalidad, pero para borrar duplicados necesitas <strong>Chrome o Edge</strong> (escritorio o Android).</span>
             <span class="en"><i class="fas fa-circle-info"></i> Your browser doesn't allow deleting files from the web.<br>Scanning works fine, but to delete duplicates you need <strong>Chrome or Edge</strong> (desktop or Android).</span>
           </div>
@@ -131,7 +134,7 @@
 
         <!-- ② CONFIRM STEP -->
         <div id="confirm-step">
-          <div class="home-icon" style="font-size:2rem;"><i class="fas fa-folder-open"></i></div>
+          <div class="home-icon home-icon-sm"><i class="fas fa-folder-open"></i></div>
           <h3><span class="es">Carpeta seleccionada</span><span class="en">Folder selected</span></h3>
           <div class="confirm-path" id="confirm-path-text"></div>
           <p class="es">Se escanearán todos los archivos de esta carpeta y sus subcarpetas. Solo se omiten las carpetas internas del sistema (papelera, índices…), las carpetas del sistema operativo si eliges la raíz de un disco, y lo que marques en Opciones. Todo lo omitido aparece en el registro.</p>
@@ -143,10 +146,10 @@
         </div>
 
         <!-- ③ OK SCREEN — no duplicates found -->
-        <div id="ok-screen" style="display:none;" class="ok-screen"></div>
+        <div id="ok-screen" class="ok-screen"></div>
 
         <!-- ④ VIRTUAL SCROLLER spacer — the VS mounts absolute children here -->
-        <div id="vs-spacer" style="display:none;"></div>
+        <div id="vs-spacer"></div>
 
       </div>
 
@@ -176,24 +179,24 @@
       </div>
     </div>
 
-    <div class="divider" id="div-2"></div>
+    <div class="divider" id="div-2" role="separator" aria-orientation="vertical" tabindex="0" aria-label="Redimensionar paneles / Resize panels"></div>
 
     <!-- RIGHT: file preview -->
     <div class="panel" id="panel-right">
       <div class="ph">
         <div class="ph-l">
-          <i class="fas fa-eye" style="font-size:.78rem;color:var(--red);"></i>
+          <i class="fas fa-eye ph-icon"></i>
           <span><span class="es">vista previa</span><span class="en">preview</span></span>
         </div>
-        <div style="display:flex;align-items:center;gap:5px;min-width:0;">
-          <span id="prev-lbl" style="font-family:'Fira Code',monospace;font-size:.63rem;color:var(--muted);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;"></span>
-          <button id="btn-close-prev" data-action="close-preview" style="display:none;" title="Cerrar / Close"><i class="fas fa-xmark"></i></button>
+        <div class="ph-r">
+          <span id="prev-lbl"></span>
+          <button id="btn-close-prev" data-action="close-preview" title="Cerrar / Close" aria-label="Cerrar vista previa / Close preview"><i class="fas fa-xmark"></i></button>
         </div>
       </div>
       <div id="prev-body">
         <div id="prev-empty">
           <i class="fas fa-hand-pointer"></i>
-          <span style="font-family:'Fira Code',monospace;font-size:.73rem;">
+          <span class="prev-hint">
             <span class="es">Pulsa el ojo<br>de cualquier archivo</span>
             <span class="en">Click the eye<br>on any file</span>
           </span>
@@ -207,8 +210,8 @@
 
 <!-- REMOVAL MODAL -->
 <div id="modal-ov">
-  <div class="mbox">
-    <h3><i class="fas fa-triangle-exclamation" style="color:var(--red);margin-right:7px;"></i>
+  <div class="mbox" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h3 id="modal-title"><i class="fas fa-triangle-exclamation accent-icon"></i>
       <span class="es">Quitar duplicados</span><span class="en">Remove duplicates</span>
     </h3>
     <div class="mlist" id="modal-list"></div>
@@ -235,17 +238,17 @@
     </div>
     <p class="es">Antes de tocar cada archivo se vuelve a leer entero, junto con el original, y se comparan con SHA-256. Si algo ha cambiado o no coincide, ese archivo no se toca.</p>
     <p class="en">Before touching each file it is read again in full, together with the original, and both are compared with SHA-256. If anything changed or does not match, that file is left alone.</p>
-    <div id="confirm-wrap" style="display:none;">
-      <p class="es">Escribe <strong style="color:var(--red)">CONFIRMAR</strong> para borrar definitivamente:</p>
-      <p class="en">Type <strong style="color:var(--red)">CONFIRM</strong> to delete permanently:</p>
-      <input class="minput" id="modal-input" placeholder="CONFIRMAR" autocomplete="off" spellcheck="false">
+    <div id="confirm-wrap">
+      <p class="es">Escribe <strong class="accent">CONFIRMAR</strong> para borrar definitivamente:</p>
+      <p class="en">Type <strong class="accent">CONFIRM</strong> to delete permanently:</p>
+      <input class="minput" id="modal-input" placeholder="CONFIRMAR" autocomplete="off" spellcheck="false" aria-label="Confirmación / Confirmation">
     </div>
     <div class="mactions">
       <button class="btn-cancel" data-action="close-modal"><span class="es">Cancelar</span><span class="en">Cancel</span></button>
       <button class="btn-confirm" id="btn-confirm" data-action="exec-removal">
         <i class="fas fa-box-archive" id="btn-confirm-icon"></i>
         <span id="btn-confirm-q"><span class="es">Mover a cuarentena</span><span class="en">Move to quarantine</span></span>
-        <span id="btn-confirm-d" style="display:none;"><span class="es">Eliminar</span><span class="en">Delete</span></span>
+        <span id="btn-confirm-d"><span class="es">Eliminar</span><span class="en">Delete</span></span>
       </button>
     </div>
   </div>
@@ -253,9 +256,9 @@
 
 <!-- SETTINGS MODAL -->
 <div id="settings-ov">
-  <div class="sbox">
-    <h3>
-      <i class="fas fa-sliders" style="color:var(--red);"></i>
+  <div class="sbox" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <h3 id="settings-title">
+      <i class="fas fa-sliders accent"></i>
       <span class="es">Opciones de escaneo</span><span class="en">Scan options</span>
     </h3>
 
@@ -298,8 +301,8 @@
       <span class="slabel es">No escanear archivos que pesen menos de:</span>
       <span class="slabel en">Skip files smaller than:</span>
       <div class="ssize-row">
-        <input type="number" id="cfg-minsize" min="0" value="0" placeholder="0">
-        <select id="cfg-minunit" class="cfg-select">
+        <input type="number" id="cfg-minsize" min="0" value="0" placeholder="0" aria-label="Tamaño mínimo / Minimum size">
+        <select id="cfg-minunit" class="cfg-select" aria-label="Unidad / Unit">
           <option value="1">B</option>
           <option value="1024" selected>KB</option>
           <option value="1048576">MB</option>
@@ -343,7 +346,7 @@
       <button class="btn-cancel" data-action="close-settings">
         <span class="es">Cancelar</span><span class="en">Cancel</span>
       </button>
-      <button class="btn-confirm" data-action="save-settings" style="opacity:1;">
+      <button class="btn-confirm" data-action="save-settings">
         <i class="fas fa-check"></i> <span class="es">Guardar</span><span class="en">Save</span>
       </button>
     </div>

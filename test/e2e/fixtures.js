@@ -8,9 +8,17 @@ import { test as base, expect } from '@playwright/test';
 
 export const test = base.extend({
   page: async ({ page }, use) => {
-    // Pruebas herméticas: nada de red externa (CDN de iconos/fuentes)
-    await page.route(url => !['localhost', '127.0.0.1'].includes(new URL(url).hostname), r => r.abort());
+    // La app no debe pedir nada fuera de su propio origen
+    const external = [];
+    await page.route(url => !['localhost', '127.0.0.1'].includes(new URL(url).hostname), r => {
+      external.push(r.request().url());
+      return r.abort();
+    });
     await page.addInitScript(() => {
+      // Registra cualquier violación de la Content-Security-Policy
+      window.__csp = [];
+      document.addEventListener('securitypolicyviolation', e =>
+        window.__csp.push(`${e.effectiveDirective} ${e.blockedURI} ${e.sourceFile}:${e.lineNumber}`));
       window.showDirectoryPicker = async () => {
         const root = await navigator.storage.getDirectory(); // OPFS, nunca el disco real
         return root.getDirectoryHandle(window.__pickDir);
@@ -21,6 +29,9 @@ export const test = base.extend({
     await page.goto('/');
     await use(page);
     expect(errors, 'errores de JavaScript en la página').toEqual([]);
+    expect(external, 'peticiones a otros orígenes').toEqual([]);
+    const csp = await page.evaluate(() => window.__csp).catch(() => []);
+    expect(csp, 'violaciones de la CSP').toEqual([]);
   },
 });
 export { expect };

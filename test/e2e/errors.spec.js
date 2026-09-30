@@ -79,6 +79,7 @@ test('un archivo ilegible y una carpeta ilegible se registran y el escaneo termi
     // prohibida/: no se puede listar
     const entries = FileSystemDirectoryHandle.prototype.entries;
     FileSystemDirectoryHandle.prototype.entries = function () {
+      // eslint-disable-next-line require-yield -- iterador que falla al pedir la primera entrada
       if (this.name === 'prohibida') return (async function* () { throw new DOMException('sin permiso', 'NotAllowedError'); })();
       return entries.call(this);
     };
