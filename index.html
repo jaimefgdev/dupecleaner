@@ -15,7 +15,7 @@
 <body class="es">
 
 <input type="file" id="mobile-input" webkitdirectory multiple>
-<button id="mobile-feed-btn" onclick="toggleMobileFeed()" title="Toggle log" aria-label="Toggle feed">
+<button id="mobile-feed-btn" data-action="toggle-feed" title="Toggle log" aria-label="Toggle feed">
   <i class="fas fa-terminal"></i>
 </button>
 
@@ -26,22 +26,22 @@
     <div class="nav-byline" style="font-family:'GoogleSans',sans-serif;font-weight:400;font-size:.67rem;color:var(--muted);">by jaimefg1888</div>
   </div>
   <div class="nav-right">
-    <button class="lang-switch" id="lang-btn" onclick="toggleLang()">
+    <button class="lang-switch" id="lang-btn" data-action="toggle-lang">
       <i class="fas fa-globe"></i><span class="es">ESP</span><span class="en">ENG</span>
     </button>
-    <button class="icon-btn" id="settings-btn" onclick="openSettings()" title="Opciones / Settings">
+    <button class="icon-btn" id="settings-btn" data-action="open-settings" title="Opciones / Settings">
       <i class="fas fa-gear"></i>
     </button>
-    <button class="icon-btn" id="theme-btn" onclick="toggleTheme()" title="Tema / Theme">
+    <button class="icon-btn" id="theme-btn" data-action="toggle-theme" title="Tema / Theme">
       <i class="fas fa-moon" id="theme-icon"></i>
     </button>
     <div class="nav-folder" id="nav-folder" style="display:none;">
       <i class="fas fa-folder"></i><span id="nav-folder-name"></span>
     </div>
-    <button class="nbtn" id="btn-stop" onclick="stopScan()">
+    <button class="nbtn" id="btn-stop" data-action="stop-scan">
       <i class="fas fa-stop"></i> <span class="es">Detener</span><span class="en">Stop</span>
     </button>
-    <button class="nbtn" id="btn-reset" onclick="resetApp()">
+    <button class="nbtn" id="btn-reset" data-action="reset">
       <i class="fas fa-rotate-left"></i> <span class="es">Nuevo escaneo</span><span class="en">New scan</span>
     </button>
     <div style="font-family:'Fira Code',monospace;font-size:.62rem;color:var(--dim);" class="es">SHA-256</div>
@@ -88,7 +88,7 @@
       <div id="filter-bar">
         <span class="filter-label es">formato:</span>
         <span class="filter-label en">format:</span>
-        <button class="fmt-chip all active" data-ext="all" onclick="setFilter('all',this)">
+        <button class="fmt-chip all active" data-ext="all" data-action="filter">
           <span class="es">todos</span><span class="en">all</span>
         </button>
       </div>
@@ -102,7 +102,7 @@
           <h2>DupeCleaner</h2>
           <p class="es">Selecciona una carpeta — Descargas, Documentos, donde quieras. La app la escanea con SHA-256 y te muestra los archivos con contenido exactamente idéntico.</p>
           <p class="en">Select any folder — Downloads, Documents, wherever. The app scans it with SHA-256 and shows files with exactly identical content.</p>
-          <button class="btn-primary" onclick="pickFolder()">
+          <button class="btn-primary" data-action="pick-folder">
             <i class="fas fa-folder-open"></i>
             <span class="es">Seleccionar carpeta</span><span class="en">Select folder</span>
           </button>
@@ -136,8 +136,8 @@
           <p class="es">Se escanearán todos los archivos de esta carpeta y sus subcarpetas. Solo se omiten las carpetas críticas del sistema operativo (Windows, macOS y Linux).</p>
           <p class="en">All files in this folder and subfolders will be scanned. Only critical OS folders are skipped (Windows, macOS and Linux).</p>
           <div class="confirm-btns">
-            <button class="btn-secondary" onclick="cancelPick()"><i class="fas fa-xmark"></i> <span class="es">Cancelar</span><span class="en">Cancel</span></button>
-            <button class="btn-primary"   onclick="beginScan()"><i class="fas fa-magnifying-glass"></i> <span class="es">Iniciar escaneo</span><span class="en">Start scan</span></button>
+            <button class="btn-secondary" data-action="cancel-pick"><i class="fas fa-xmark"></i> <span class="es">Cancelar</span><span class="en">Cancel</span></button>
+            <button class="btn-primary"   data-action="begin-scan"><i class="fas fa-magnifying-glass"></i> <span class="es">Iniciar escaneo</span><span class="en">Start scan</span></button>
           </div>
         </div>
 
@@ -160,15 +160,15 @@
         </div>
         <div class="sbar-center"><span id="sel-info"></span></div>
         <div class="sbar-right">
-          <button class="sbar-btn" onclick="selectAll()">
+          <button class="sbar-btn" data-action="select-all">
             <i class="fas fa-check-double"></i> <span class="es">Sel. todos</span><span class="en">Select all</span>
           </button>
-          <button class="sbar-btn" onclick="deselectAll()">
+          <button class="sbar-btn" data-action="deselect-all">
             <i class="fas fa-xmark"></i> <span class="es">Desel. todos</span><span class="en">Deselect all</span>
           </button>
-          <button id="btn-del" onclick="openModal()">
-            <i class="fas fa-trash-alt"></i>
-            <span class="es">Eliminar</span><span class="en">Delete</span>
+          <button id="btn-del" data-action="open-modal">
+            <i class="fas fa-box-archive"></i>
+            <span class="es">Quitar</span><span class="en">Remove</span>
             (<span id="sel-cnt">0</span>)
           </button>
         </div>
@@ -186,7 +186,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:5px;min-width:0;">
           <span id="prev-lbl" style="font-family:'Fira Code',monospace;font-size:.63rem;color:var(--muted);font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:110px;"></span>
-          <button id="btn-close-prev" onclick="closePreview()" style="display:none;" title="Cerrar / Close"><i class="fas fa-xmark"></i></button>
+          <button id="btn-close-prev" data-action="close-preview" style="display:none;" title="Cerrar / Close"><i class="fas fa-xmark"></i></button>
         </div>
       </div>
       <div id="prev-body">
@@ -204,22 +204,47 @@
   </div>
 </div>
 
-<!-- DELETE MODAL -->
+<!-- REMOVAL MODAL -->
 <div id="modal-ov">
   <div class="mbox">
     <h3><i class="fas fa-triangle-exclamation" style="color:var(--red);margin-right:7px;"></i>
-      <span class="es">Eliminar permanentemente</span><span class="en">Permanently delete</span>
+      <span class="es">Quitar duplicados</span><span class="en">Remove duplicates</span>
     </h3>
-    <p class="es">Los archivos seleccionados se borrarán del disco. <strong>Sin papelera. Sin deshacer.</strong></p>
-    <p class="en">The selected files will be permanently removed from disk. <strong>No recycle bin. No undo.</strong></p>
     <div class="mlist" id="modal-list"></div>
-    <p class="es">Escribe <strong style="color:var(--red)">CONFIRMAR</strong> para activar el botón:</p>
-    <p class="en">Type <strong style="color:var(--red)">CONFIRM</strong> to enable the button:</p>
-    <input class="minput" id="modal-input" placeholder="CONFIRMAR" oninput="checkConfirm(this.value)" autocomplete="off" spellcheck="false">
+    <div class="del-modes">
+      <label class="del-mode selected" id="mode-quarantine">
+        <input type="radio" name="del-mode" value="quarantine" checked data-action="del-mode">
+        <div class="pc-body">
+          <span class="pc-title">
+            <span class="es">Mover a cuarentena</span><span class="en">Move to quarantine</span>
+            <span class="pc-badge es">RECOMENDADO</span><span class="pc-badge en">RECOMMENDED</span>
+          </span>
+          <span class="pc-desc es">Se mueven a la carpeta <code>_dupecleaner_cuarentena</code> dentro de la carpeta escaneada, conservando su ruta. Puedes revisarlos y restaurarlos o borrarlos después.</span>
+          <span class="pc-desc en">They are moved to the <code>_dupecleaner_cuarentena</code> folder inside the scanned folder, keeping their path. You can review and restore or delete them later.</span>
+        </div>
+      </label>
+      <label class="del-mode" id="mode-delete">
+        <input type="radio" name="del-mode" value="delete" data-action="del-mode">
+        <div class="pc-body">
+          <span class="pc-title es">Borrar definitivamente</span><span class="pc-title en">Delete permanently</span>
+          <span class="pc-desc es"><strong>Sin papelera. Sin deshacer.</strong></span>
+          <span class="pc-desc en"><strong>No recycle bin. No undo.</strong></span>
+        </div>
+      </label>
+    </div>
+    <p class="es">Antes de tocar cada archivo se vuelve a leer entero, junto con el original, y se comparan con SHA-256. Si algo ha cambiado o no coincide, ese archivo no se toca.</p>
+    <p class="en">Before touching each file it is read again in full, together with the original, and both are compared with SHA-256. If anything changed or does not match, that file is left alone.</p>
+    <div id="confirm-wrap" style="display:none;">
+      <p class="es">Escribe <strong style="color:var(--red)">CONFIRMAR</strong> para borrar definitivamente:</p>
+      <p class="en">Type <strong style="color:var(--red)">CONFIRM</strong> to delete permanently:</p>
+      <input class="minput" id="modal-input" placeholder="CONFIRMAR" autocomplete="off" spellcheck="false">
+    </div>
     <div class="mactions">
-      <button class="btn-cancel"  onclick="closeModal()"><span class="es">Cancelar</span><span class="en">Cancel</span></button>
-      <button class="btn-confirm" id="btn-confirm" disabled onclick="execDelete()">
-        <i class="fas fa-trash-alt"></i> <span class="es">Eliminar</span><span class="en">Delete</span>
+      <button class="btn-cancel" data-action="close-modal"><span class="es">Cancelar</span><span class="en">Cancel</span></button>
+      <button class="btn-confirm" id="btn-confirm" data-action="exec-removal">
+        <i class="fas fa-box-archive" id="btn-confirm-icon"></i>
+        <span id="btn-confirm-q"><span class="es">Mover a cuarentena</span><span class="en">Move to quarantine</span></span>
+        <span id="btn-confirm-d" style="display:none;"><span class="es">Eliminar</span><span class="en">Delete</span></span>
       </button>
     </div>
   </div>
@@ -289,7 +314,7 @@
       <span class="slabel es">Precisión en archivos gigantes (&gt; 20 MB):</span>
       <span class="slabel en">Accuracy for large files (&gt; 20 MB):</span>
       <div class="precision-cards">
-        <label class="precision-card selected" id="card-sample" onclick="selectPrecision('sample')">
+        <label class="precision-card selected" id="card-sample" data-action="precision" data-value="sample">
           <input type="radio" name="cfg-strategy" id="radio-sample" value="sample" checked>
           <div class="pc-body">
             <span class="pc-title">
@@ -300,7 +325,7 @@
             <span class="pc-desc en">Checks key parts of the file (start, middle and end). Ultra-fast and ideal for videos and movies.</span>
           </div>
         </label>
-        <label class="precision-card" id="card-full" onclick="selectPrecision('full')">
+        <label class="precision-card" id="card-full" data-action="precision" data-value="full">
           <input type="radio" name="cfg-strategy" id="radio-full" value="full">
           <div class="pc-body">
             <span class="pc-title es">Modo Exhaustivo</span><span class="pc-title en">Thorough Mode</span>
@@ -314,1415 +339,16 @@
     </div>
 
     <div class="mactions">
-      <button class="btn-cancel" onclick="closeSettings()">
+      <button class="btn-cancel" data-action="close-settings">
         <span class="es">Cancelar</span><span class="en">Cancel</span>
       </button>
-      <button class="btn-confirm" onclick="saveSettings()" style="opacity:1;">
+      <button class="btn-confirm" data-action="save-settings" style="opacity:1;">
         <i class="fas fa-check"></i> <span class="es">Guardar</span><span class="en">Save</span>
       </button>
     </div>
   </div>
 </div>
 
-<script>
-'use strict';
-
-/* ═══════════════════════════════════════════════════════════
-   ① STREAMING SHA-256 WORKER  (O(1) RAM)
-   ───────────────────────────────────────────────────────────
-   Pure-JS incremental SHA-256 inside the Worker.
-   Reads the File via ReadableStream in 64 KB chunks —
-   RAM stays flat regardless of file size (no arrayBuffer()).
-   For files > 20 MB in sample mode, three 2 MB slices are
-   each streamed the same way, so peak RAM is ~64 KB, never
-   the whole slice.
-═══════════════════════════════════════════════════════════ */
-const _WORKER_SRC = `
-'use strict';
-
-/* ── SHA-256 round constants (cube roots of first 64 primes) ── */
-const _K = new Uint32Array([
-  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
-  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
-  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
-  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
-  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
-  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
-  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
-  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2
-]);
-
-const _ror = (n, s) => (n >>> s) | (n << (32 - s));
-
-class SHA256 {
-  constructor() {
-    this._h = new Uint32Array([
-      0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,
-      0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19
-    ]);
-    this._buf    = new Uint8Array(64);
-    this._bufLen = 0;
-    this._total  = 0; /* bytes fed so far */
-  }
-
-  update(data) {
-    if (!(data instanceof Uint8Array))
-      data = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-    let i = 0;
-    const len = data.length;
-    this._total += len;
-
-    if (this._bufLen > 0) {
-      const take = Math.min(64 - this._bufLen, len);
-      this._buf.set(data.subarray(0, take), this._bufLen);
-      this._bufLen += take;
-      i = take;
-      if (this._bufLen === 64) { this._compress(this._buf); this._bufLen = 0; }
-    }
-    while (i + 64 <= len) { this._compress(data.subarray(i, i + 64)); i += 64; }
-    if (i < len) { this._buf.set(data.subarray(i), 0); this._bufLen = len - i; }
-  }
-
-  final() {
-    const padLen = this._bufLen < 56 ? 64 : 128;
-    const pad    = new Uint8Array(padLen);
-    pad.set(this._buf.subarray(0, this._bufLen));
-    pad[this._bufLen] = 0x80;
-
-    const bits = this._total * 8;
-    const dv   = new DataView(pad.buffer, padLen - 8);
-    dv.setUint32(0, Math.floor(bits / 0x100000000) >>> 0);
-    dv.setUint32(4, bits >>> 0);
-
-    this._compress(pad.subarray(0, 64));
-    if (padLen === 128) this._compress(pad.subarray(64));
-
-    const out = new Uint8Array(32);
-    const ov  = new DataView(out.buffer);
-    for (let i = 0; i < 8; i++) ov.setUint32(i * 4, this._h[i]);
-    return Array.from(out).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  _compress(blk) {
-    const w  = new Uint32Array(64);
-    const dv = new DataView(blk.buffer, blk.byteOffset, 64);
-    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(i * 4);
-    for (let i = 16; i < 64; i++) {
-      const s0 = _ror(w[i-15], 7) ^ _ror(w[i-15], 18) ^ (w[i-15] >>> 3);
-      const s1 = _ror(w[i-2], 17) ^ _ror(w[i-2], 19)  ^ (w[i-2]  >>> 10);
-      w[i] = (w[i-16] + s0 + w[i-7] + s1) >>> 0;
-    }
-    let [a,b,c,d,e,f,g,h] = this._h;
-    for (let i = 0; i < 64; i++) {
-      const S1   = _ror(e, 6) ^ _ror(e, 11) ^ _ror(e, 25);
-      const ch   = (e & f) ^ (~e & g);
-      const tmp1 = (h + S1 + ch + _K[i] + w[i]) >>> 0;
-      const S0   = _ror(a, 2) ^ _ror(a, 13) ^ _ror(a, 22);
-      const maj  = (a & b) ^ (a & c) ^ (b & c);
-      const tmp2 = (S0 + maj) >>> 0;
-      h=g; g=f; f=e; e=(d+tmp1)>>>0; d=c; c=b; b=a; a=(tmp1+tmp2)>>>0;
-    }
-    this._h[0]=(this._h[0]+a)>>>0; this._h[1]=(this._h[1]+b)>>>0;
-    this._h[2]=(this._h[2]+c)>>>0; this._h[3]=(this._h[3]+d)>>>0;
-    this._h[4]=(this._h[4]+e)>>>0; this._h[5]=(this._h[5]+f)>>>0;
-    this._h[6]=(this._h[6]+g)>>>0; this._h[7]=(this._h[7]+h)>>>0;
-  }
-}
-
-/* ── Stream a Blob chunk-by-chunk into the SHA256 state ── */
-async function pipeBlob(sha, blob) {
-  const reader = blob.stream().getReader();
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      sha.update(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
-
-const SAMPLE_THRESHOLD = 20 * 1024 * 1024;
-const SAMPLE_CHUNK     =  2 * 1024 * 1024;
-
-self.onmessage = async function({ data: { id, file, strategy } }) {
-  try {
-    const sha = new SHA256();
-
-    if (file.size <= SAMPLE_THRESHOLD || strategy === 'full') {
-      /* Full file — stream all bytes, O(1) RAM */
-      await pipeBlob(sha, file);
-    } else {
-      /* Sample mode — three 2 MB slices, each still streamed */
-      const mid = Math.max(0, Math.floor(file.size / 2) - SAMPLE_CHUNK / 2);
-      await pipeBlob(sha, file.slice(0,                              SAMPLE_CHUNK));
-      await pipeBlob(sha, file.slice(mid,                            mid + SAMPLE_CHUNK));
-      await pipeBlob(sha, file.slice(Math.max(0, file.size - SAMPLE_CHUNK)));
-    }
-
-    self.postMessage({ id, hash: sha.final() });
-  } catch(err) {
-    self.postMessage({ id, hash: null, error: err.message });
-  }
-};
-`;
-
-const _workerURL   = URL.createObjectURL(new Blob([_WORKER_SRC], { type:'application/javascript' }));
-const _hashWorker  = new Worker(_workerURL);
-let   _hashIdSeq   = 0;
-const _hashPending = new Map();
-
-_hashWorker.onmessage = ({ data: { id, hash } }) => {
-  const resolve = _hashPending.get(id);
-  if (resolve) { _hashPending.delete(id); resolve(hash); }
-};
-_hashWorker.onerror = err => {
-  console.error('[HashWorker]', err);
-  for (const [, resolve] of _hashPending) resolve(null);
-  _hashPending.clear();
-};
-
-/* ═══════════════════════════════════════════════════════════
-   CONSTANTS
-═══════════════════════════════════════════════════════════ */
-const SAMPLE_THRESHOLD = 20 * 1024 * 1024;
-const SAMPLE_CHUNK     =  2 * 1024 * 1024;
-
-const BLOCKED = new Set([
-  'windows','system32','syswow64','program files','program files (x86)',
-  'programdata','system volume information','$recycle.bin','recovery',
-  'boot','efi','winsxs','drivers','assembly','windowsapps',
-  'windowspowershell','microsoft.net','servicing','installer','prefetch',
-  'system','library','private','cores','developer',
-  'volumes','.trashes','.spotlight-v100','.fseventsd','macos',
-  'bin','sbin','usr','etc','proc','dev','sys','run',
-  'lib','lib64','lib32','libx32','srv','snap','lost+found',
-]);
-
-const DEV_FOLDERS = new Set([
-  'node_modules','.git','.cache','dist','__pycache__',
-  '.next','.nuxt','.turbo','.parcel-cache','coverage',
-  '.svelte-kit','out','build','.tox','venv','.venv',
-]);
-
-const SYS_EXTENSIONS = new Set([
-  'ini','sys','dll','lnk','bat','cmd','drv',
-  'msi','inf','cat','evt','evtx','reg','scr',
-]);
-
-/* ═══════════════════════════════════════════════════════════
-   USER CONFIG STATE
-═══════════════════════════════════════════════════════════ */
-let cfgIgnoreDev      = true;
-let cfgIgnoreHidden   = false;
-let cfgIgnoreSysFiles = false;
-let userMinFileSize   = 0;
-let userHashStrategy  = 'sample';
-
-/* ═══════════════════════════════════════════════════════════
-   APP STATE
-═══════════════════════════════════════════════════════════ */
-let dirHandle   = null;
-let cancelled   = false;
-let scanning    = false;
-let limitedMode = false;
-let fileCount   = 0;
-let skipCount   = 0;
-let feedCount   = 0;
-const MAX_FEED  = 300;
-
-const FILES  = new Map();
-const GROUPS = new Map();
-const SEL    = new Set();
-
-/* ═══════════════════════════════════════════════════════════
-   PURE HELPERS
-═══════════════════════════════════════════════════════════ */
-const t   = (es, en) => document.body.classList.contains('es') ? es : en;
-const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-
-const fmtSize = b =>
-  b < 1024         ? b + ' B'
-  : b < 1048576    ? (b / 1024).toFixed(1)      + ' KB'
-  : b < 1073741824 ? (b / 1048576).toFixed(2)   + ' MB'
-  :                  (b / 1073741824).toFixed(2) + ' GB';
-
-const ICONS = {
-  jpg:'fa-file-image', jpeg:'fa-file-image', png:'fa-file-image', gif:'fa-file-image',
-  webp:'fa-file-image', bmp:'fa-file-image', heic:'fa-file-image', svg:'fa-file-image',
-  pdf:'fa-file-pdf',
-  mp4:'fa-file-video', mkv:'fa-file-video', avi:'fa-file-video', mov:'fa-file-video', webm:'fa-file-video',
-  mp3:'fa-file-audio', wav:'fa-file-audio', flac:'fa-file-audio', ogg:'fa-file-audio', aac:'fa-file-audio',
-  zip:'fa-file-zipper', rar:'fa-file-zipper', '7z':'fa-file-zipper', gz:'fa-file-zipper',
-  doc:'fa-file-word',  docx:'fa-file-word',  xls:'fa-file-excel', xlsx:'fa-file-excel',
-  js:'fa-file-code',   ts:'fa-file-code',    py:'fa-file-code',
-  html:'fa-file-code', css:'fa-file-code',   json:'fa-file-code',
-  txt:'fa-file-lines', md:'fa-file-lines',   csv:'fa-file-lines', log:'fa-file-lines',
-};
-const getIcon  = n => 'fas ' + (ICONS[n.split('.').pop().toLowerCase()] || 'fa-file');
-const isImg    = n => /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(n);
-const isTxt    = n => /\.(txt|md|json|js|ts|py|html|css|log|csv|xml|sh|bat|c|cpp|h|java|rb|php)$/i.test(n);
-const isVideo  = n => /\.(mp4|webm|mkv|avi|mov|ogv|m4v)$/i.test(n);
-const isAudio  = n => /\.(mp3|wav|flac|ogg|aac|m4a|opus|weba)$/i.test(n);
-const frame    = () => new Promise(r => requestAnimationFrame(r));
-const hasFSAPI = () => 'showDirectoryPicker' in window;
-
-const isBlocked = path =>
-  path.toLowerCase().replace(/\\/g, '/').split('/').some(p => BLOCKED.has(p));
-
-const isUserIgnoredDir = name => {
-  if (cfgIgnoreDev    && DEV_FOLDERS.has(name.toLowerCase())) return true;
-  if (cfgIgnoreHidden && name.startsWith('.'))                 return true;
-  return false;
-};
-
-const isUserIgnoredFile = name => {
-  if (!cfgIgnoreSysFiles) return false;
-  const ext = name.includes('.') ? name.split('.').pop().toLowerCase() : '';
-  return SYS_EXTENSIONS.has(ext);
-};
-
-/* ═══════════════════════════════════════════════════════════
-   ② VIRTUAL SCROLLER  (DOM Windowing)
-   ───────────────────────────────────────────────────────────
-   • Only ~20 nodes live in the DOM at once.
-   • Items are positioned with transform:translateY() —
-     GPU-composited, no layout reflow on scroll.
-   • Node pool: released nodes are recycled instead of GC'd.
-   • Variable heights: estimated on add, measured after first
-     paint, then tops are adjusted incrementally.
-   • applyFilter(): recomputes visible subset and positions
-     without touching already-measured heights.
-═══════════════════════════════════════════════════════════ */
-class VirtualScroller {
-  constructor(scrollEl, spacerEl) {
-    this._scroll  = scrollEl;  // the overflow-y:auto container
-    this._spacer  = spacerEl;  // the relative-positioned inner div
-    this._items   = [];        // [{hash, top, height, ext, hidden}]
-    this._idxMap  = new Map(); // hash → index in _items
-    this._visible = [];        // indices currently filtered-in
-    this._rendered = new Map();// hash → DOM element (in DOM right now)
-    this._pool    = [];        // recycled divs waiting for reuse
-    this._totalH  = 0;
-    this._raf     = null;
-    this._OVERSCAN = 3;
-
-    scrollEl.addEventListener('scroll', () => this._sched(), { passive: true });
-    // Re-render on resize (viewport height change)
-    new ResizeObserver(() => this._sched()).observe(scrollEl);
-  }
-
-  /* ── Estimate item height from group file count ── */
-  _est(hash) {
-    const files = GROUPS.get(hash);
-    if (!files) return 80;
-    return 52 + files.length * 47 + 16; // header + N rows + bottom margin
-  }
-
-  /* ── Add a new group to the list ── */
-  add(hash) {
-    const ext    = (() => {
-      const files = GROUPS.get(hash);
-      if (!files || !files[0]) return '';
-      const n = files[0].name;
-      return n.includes('.') ? n.split('.').pop().toLowerCase() : '';
-    })();
-    const height = this._est(hash);
-    const item   = { hash, top: this._totalH, height, ext, hidden: false };
-    this._idxMap.set(hash, this._items.length);
-    this._items.push(item);
-    this._totalH += height;
-    this._visible = this._buildVisible();
-    this._spacer.style.height = this._totalH + 'px';
-    this._sched();
-  }
-
-  /* ── Remove a group (after deletion) ── */
-  remove(hash) {
-    const idx = this._idxMap.get(hash);
-    if (idx === undefined) return;
-
-    // Release DOM node if currently rendered
-    const el = this._rendered.get(hash);
-    if (el) { this._release(el); this._rendered.delete(hash); }
-
-    const item = this._items[idx];
-    this._totalH -= item.height;
-
-    // Shift tops of all items after this one
-    for (let i = idx + 1; i < this._items.length; i++) {
-      this._items[i].top -= item.height;
-      // If currently rendered, update its transform immediately
-      const rendEl = this._rendered.get(this._items[i].hash);
-      if (rendEl) rendEl.style.transform = `translateY(${this._items[i].top}px)`;
-    }
-
-    this._items.splice(idx, 1);
-    // Rebuild idxMap (indices shifted after removal point)
-    this._idxMap.clear();
-    for (let i = 0; i < this._items.length; i++) this._idxMap.set(this._items[i].hash, i);
-
-    this._visible = this._buildVisible();
-    this._spacer.style.height = this._totalH + 'px';
-    this._sched();
-  }
-
-  /* ── Apply format filter — recomputes visible set & positions ── */
-  setFilter(activeFilters) {
-    // Mark each item as hidden or not
-    for (const item of this._items) {
-      item.hidden = activeFilters.size > 0 && !activeFilters.has(item.ext);
-    }
-    // Recompute tops for the filtered-visible subset
-    let top = 0;
-    for (const item of this._items) {
-      if (!item.hidden) { item.top = top; top += item.height; }
-    }
-    this._totalH = top;
-    this._spacer.style.height = this._totalH + 'px';
-    this._visible = this._buildVisible();
-
-    // Release everything currently rendered so _render() rebuilds from scratch
-    for (const [, el] of this._rendered) this._release(el);
-    this._rendered.clear();
-    this._scroll.scrollTop = 0;
-    this._sched();
-  }
-
-  /* ── Clear all state (scan reset) ── */
-  reset() {
-    for (const [, el] of this._rendered) this._release(el);
-    this._rendered.clear();
-    this._items.length = 0;
-    this._idxMap.clear();
-    this._visible.length = 0;
-    this._pool.length = 0;
-    this._totalH = 0;
-    this._spacer.style.height = '0';
-  }
-
-  /* ── Node pool: acquire / release ── */
-  _acquire() {
-    const el = this._pool.pop() || document.createElement('div');
-    el.className = 'vs-item';
-    el.style.visibility = '';
-    return el;
-  }
-
-  _release(el) {
-    el.style.visibility = 'hidden';
-    el.innerHTML = '';
-    this._pool.push(el);
-    // Keep pool bounded to avoid memory leaks
-    if (this._pool.length > 40) this._pool.length = 40;
-  }
-
-  /* ── Build the filtered-visible index list ── */
-  _buildVisible() {
-    const v = [];
-    for (let i = 0; i < this._items.length; i++) {
-      if (!this._items[i].hidden) v.push(i);
-    }
-    return v;
-  }
-
-  _sched() {
-    if (this._raf) return;
-    this._raf = requestAnimationFrame(() => { this._raf = null; this._render(); });
-  }
-
-  _render() {
-    if (!this._visible.length) return;
-
-    const scrollTop  = this._scroll.scrollTop;
-    const viewH      = this._scroll.clientHeight;
-    const N          = this._visible.length;
-    const OVER       = this._OVERSCAN;
-
-    /* Binary search: first visible item in _visible[] */
-    let lo = 0, hi = N - 1, startV = 0;
-    while (lo <= hi) {
-      const mid = (lo + hi) >> 1;
-      const item = this._items[this._visible[mid]];
-      if (item.top + item.height < scrollTop) { startV = mid + 1; lo = mid + 1; }
-      else hi = mid - 1;
-    }
-    const vStart = Math.max(0, startV - OVER);
-
-    /* Linear scan to find end */
-    let vEnd = vStart;
-    while (vEnd < N && this._items[this._visible[vEnd]].top < scrollTop + viewH) vEnd++;
-    vEnd = Math.min(N - 1, vEnd + OVER);
-
-    /* Set of hashes that should be in DOM */
-    const needed = new Set();
-    for (let v = vStart; v <= vEnd; v++) {
-      needed.add(this._items[this._visible[v]].hash);
-    }
-
-    /* Release items that scrolled out */
-    for (const [hash, el] of this._rendered) {
-      if (!needed.has(hash)) { this._release(el); this._rendered.delete(hash); }
-    }
-
-    /* Mount items that scrolled in */
-    for (let v = vStart; v <= vEnd; v++) {
-      const item = this._items[this._visible[v]];
-      if (this._rendered.has(item.hash)) {
-        // Already in DOM — just make sure transform is current
-        this._rendered.get(item.hash).style.transform = `translateY(${item.top}px)`;
-        continue;
-      }
-
-      const el = this._acquire();
-      el.style.transform = `translateY(${item.top}px)`;
-      this._buildGroupContent(el, item.hash);
-      this._spacer.appendChild(el);
-      this._rendered.set(item.hash, el);
-
-      /* Measure actual height after paint & fix subsequent tops if needed */
-      const capturedIdx = this._idxMap.get(item.hash);
-      requestAnimationFrame(() => {
-        if (!this._rendered.has(item.hash)) return;
-        const actual = el.offsetHeight + 16;
-        const est    = this._items[capturedIdx]?.height;
-        if (!est || Math.abs(actual - est) <= 3) return;
-        const diff = actual - est;
-        this._items[capturedIdx].height = actual;
-        this._totalH += diff;
-        this._spacer.style.height = this._totalH + 'px';
-        // Shift subsequent visible items
-        for (let i = capturedIdx + 1; i < this._items.length; i++) {
-          if (this._items[i].hidden) continue;
-          this._items[i].top += diff;
-          const rEl = this._rendered.get(this._items[i].hash);
-          if (rEl) rEl.style.transform = `translateY(${this._items[i].top}px)`;
-        }
-        this._visible = this._buildVisible();
-      });
-    }
-  }
-
-  /* ── Build the HTML content of one group card into a recycled div ── */
-  _buildGroupContent(el, hash) {
-    const files = GROUPS.get(hash);
-    if (!files || files.length < 2) { el.innerHTML = ''; return; }
-
-    const ext = files[0].name.includes('.') ? files[0].name.split('.').pop().toLowerCase() : '';
-
-    let html = `<div class="dg" id="grp-${hash}" data-ext="${esc(ext)}">
-      <div class="dg-hdr">
-        <span>
-          <span class="h">${hash.substring(0, 14)}&hellip;</span>
-          &nbsp;&middot;&nbsp;${files.length} ${t('copias idénticas','identical copies')}
-          &nbsp;&middot;&nbsp;${fmtSize(files[0].size)} ${t('c/u','each')}
-          ${ext ? `&nbsp;&middot;&nbsp;<span style="color:var(--muted)">.${ext}</span>` : ''}
-        </span>
-        <span class="sv" title="${t('espacio recuperable','space freed by deleting copies')}">
-          &larr; ${fmtSize(files[0].size * (files.length - 1))}
-        </span>
-      </div>`;
-
-    files.forEach((fi, i) => {
-      const isOrig    = i === 0;
-      const canDelete = !limitedMode && fi.canDelete !== false;
-
-      let h = 5381;
-      for (let j = 0; j < fi.key.length; j++) h = ((h << 5) + h) ^ fi.key.charCodeAt(j);
-      const sid = 'r' + (h >>> 0).toString(36);
-      fi._sid = sid;
-      if (FILES.has(fi.key)) FILES.get(fi.key)._sid = sid;
-
-      const keyEsc  = fi.key.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-      const chkAttr = (isOrig || !canDelete)
-        ? `disabled title="${isOrig ? t('Original: no se puede eliminar','Original: cannot be deleted') : t('Solo lectura en este navegador','Read-only in this browser')}"`
-        : '';
-      const selClass = SEL.has(fi.key) ? ' sel' : '';
-
-      html += `<div class="df${isOrig ? ' orig' : ''}${selClass}" id="${sid}">
-        <input type="checkbox" ${chkAttr} ${SEL.has(fi.key) ? 'checked' : ''} onchange="toggleSel('${keyEsc}',this.checked)">
-        <i class="${getIcon(fi.name)} df-icon"></i>
-        <div class="df-info">
-          <div class="df-name">${esc(fi.name)}${isOrig ? `<span class="orig-tag">${t('original','original')}</span>` : ''}</div>
-          <div class="df-path">${esc(fi.dir)}</div>
-        </div>
-        <button class="btn-eye" onclick="previewFile('${keyEsc}')" title="${t('Vista previa','Preview')}">
-          <i class="fas fa-eye"></i>
-        </button>
-      </div>`;
-    });
-
-    html += '</div>';
-    el.innerHTML = html;
-  }
-}
-
-/* Global VS instance — created once and reused across scans */
-const _spacerEl = document.getElementById('vs-spacer');
-const _scrollEl = document.getElementById('dupes-scroll');
-const vs = new VirtualScroller(_scrollEl, _spacerEl);
-
-/* ═══════════════════════════════════════════════════════════
-   BOOTSTRAP — theme, language, compat banner
-═══════════════════════════════════════════════════════════ */
-(function restoreTheme() {
-  try {
-    if (localStorage.getItem('dc-theme') === 'dark') {
-      document.body.classList.add('dark');
-      document.getElementById('theme-icon').className = 'fas fa-sun';
-    }
-  } catch {}
-})();
-
-function updateCompatNote() {
-  const el = document.getElementById('compat-note');
-  if (!el) return;
-  el.textContent = hasFSAPI()
-    ? t('Chrome · Edge · Android Chrome — escaneo y eliminación completos',
-        'Chrome · Edge · Android Chrome — full scan and deletion')
-    : t('Firefox / Safari — solo escaneo (sin eliminación)',
-        'Firefox / Safari — scan only (deletion not supported)');
-}
-updateCompatNote();
-if (!hasFSAPI()) document.getElementById('limited-warn').style.display = 'block';
-
-/* ═══════════════════════════════════════════════════════════
-   SCREEN SWITCHER
-═══════════════════════════════════════════════════════════ */
-function showScreen(name) {
-  document.getElementById('home').style.display         = name === 'home'    ? '' : 'none';
-  document.getElementById('confirm-step').style.display = name === 'confirm' ? 'flex' : 'none';
-  document.getElementById('ok-screen').style.display    = name === 'ok'      ? 'flex' : 'none';
-  document.getElementById('vs-spacer').style.display    = name === 'vs'      ? '' : 'none';
-}
-
-/* ═══════════════════════════════════════════════════════════
-   EVENT WIRING
-═══════════════════════════════════════════════════════════ */
-document.getElementById('settings-ov').addEventListener('click', e => { if (e.target === e.currentTarget) closeSettings(); });
-document.getElementById('modal-ov').addEventListener('click',    e => { if (e.target === e.currentTarget) closeModal(); });
-
-document.getElementById('mobile-input').addEventListener('change', function() {
-  const files = Array.from(this.files);
-  if (!files.length) return;
-  const rootName = files[0].webkitRelativePath.split('/')[0];
-  dirHandle = { name: rootName, _inputFiles: files };
-  showConfirm(rootName);
-});
-
-/* ═══════════════════════════════════════════════════════════
-   UI CONTROLS
-═══════════════════════════════════════════════════════════ */
-function toggleTheme() {
-  const dark = document.body.classList.toggle('dark');
-  document.getElementById('theme-icon').className = dark ? 'fas fa-sun' : 'fas fa-moon';
-  try { localStorage.setItem('dc-theme', dark ? 'dark' : 'light'); } catch {}
-}
-
-function toggleLang() {
-  const isEs = document.body.classList.contains('es');
-  document.body.classList.toggle('es', !isEs);
-  document.body.classList.toggle('en',  isEs);
-  document.documentElement.lang = isEs ? 'en' : 'es';
-  document.getElementById('modal-input').placeholder = isEs ? 'CONFIRM' : 'CONFIRMAR';
-  updateCompatNote();
-  updateSelectionUI();
-}
-
-function toggleMobileFeed() {
-  const panel = document.getElementById('panel-left');
-  const btn   = document.getElementById('mobile-feed-btn');
-  panel.classList.toggle('mobile-open');
-  btn.classList.toggle('feed-visible', panel.classList.contains('mobile-open'));
-}
-
-function setDot(state, label) {
-  document.getElementById('scan-dot').className   = 'dot d-' + state;
-  document.getElementById('scan-lbl').textContent = label;
-}
-
-function stopScan() { cancelled = true; }
-
-/* ═══════════════════════════════════════════════════════════
-   SETTINGS MODAL
-═══════════════════════════════════════════════════════════ */
-function selectPrecision(val) {
-  document.getElementById('card-sample').classList.toggle('selected', val === 'sample');
-  document.getElementById('card-full').classList.toggle('selected',   val === 'full');
-  document.getElementById('radio-sample').checked = val === 'sample';
-  document.getElementById('radio-full').checked   = val === 'full';
-}
-
-function openSettings() {
-  document.getElementById('cfg-dev').checked      = cfgIgnoreDev;
-  document.getElementById('cfg-hidden').checked   = cfgIgnoreHidden;
-  document.getElementById('cfg-sysfiles').checked = cfgIgnoreSysFiles;
-
-  let displaySize = userMinFileSize;
-  let unitVal     = '1024';
-  if      (userMinFileSize >= 1048576) { displaySize = userMinFileSize / 1048576; unitVal = '1048576'; }
-  else if (userMinFileSize >= 1024)    { displaySize = userMinFileSize / 1024;    unitVal = '1024'; }
-  else if (userMinFileSize > 0)        { displaySize = userMinFileSize;           unitVal = '1'; }
-  document.getElementById('cfg-minsize').value = displaySize || 0;
-  document.getElementById('cfg-minunit').value = unitVal;
-
-  selectPrecision(userHashStrategy);
-  document.getElementById('settings-ov').classList.add('on');
-}
-
-function closeSettings() { document.getElementById('settings-ov').classList.remove('on'); }
-
-function saveSettings() {
-  cfgIgnoreDev      = document.getElementById('cfg-dev').checked;
-  cfgIgnoreHidden   = document.getElementById('cfg-hidden').checked;
-  cfgIgnoreSysFiles = document.getElementById('cfg-sysfiles').checked;
-
-  const sizeVal  = parseFloat(document.getElementById('cfg-minsize').value) || 0;
-  const unitMult = parseInt(document.getElementById('cfg-minunit').value, 10) || 1;
-  userMinFileSize  = Math.max(0, Math.round(sizeVal * unitMult));
-  userHashStrategy = document.querySelector('input[name="cfg-strategy"]:checked')?.value || 'sample';
-
-  closeSettings();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   FORMAT FILTER
-═══════════════════════════════════════════════════════════ */
-const activeFilters = new Set();
-const detectedExts  = new Set();
-
-function addExtToFilter(ext) {
-  ext = ext.toLowerCase();
-  if (detectedExts.has(ext)) return;
-  detectedExts.add(ext);
-  const bar  = document.getElementById('filter-bar');
-  bar.classList.add('visible');
-  const chip = document.createElement('button');
-  chip.className = 'fmt-chip'; chip.dataset.ext = ext; chip.textContent = '.' + ext;
-  chip.onclick = () => setFilter(ext, chip);
-  bar.appendChild(chip);
-}
-
-function setFilter(ext, el) {
-  if (ext === 'all') {
-    activeFilters.clear();
-    document.querySelectorAll('.fmt-chip').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
-  } else {
-    activeFilters.has(ext) ? activeFilters.delete(ext) : activeFilters.add(ext);
-    el.classList.toggle('active', activeFilters.has(ext));
-    document.querySelector('.fmt-chip.all')?.classList.toggle('active', activeFilters.size === 0);
-  }
-  applyFilter();
-}
-
-function applyFilter() {
-  vs.setFilter(activeFilters);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RESIZABLE PANELS
-═══════════════════════════════════════════════════════════ */
-function makeDivider(divId, leftId, rightId) {
-  const div = document.getElementById(divId);
-  const L   = document.getElementById(leftId);
-  const R   = document.getElementById(rightId);
-  div.addEventListener('mousedown', e => {
-    e.preventDefault();
-    const x0  = e.clientX;
-    const w0L = L.getBoundingClientRect().width;
-    const w0R = R.getBoundingClientRect().width;
-    div.classList.add('drag');
-    const mv = ev => {
-      L.style.cssText += `;flex:none;width:${Math.max(100, w0L + ev.clientX - x0)}px`;
-      R.style.cssText += `;flex:none;width:${Math.max(100, w0R - (ev.clientX - x0))}px`;
-    };
-    const up = () => {
-      div.classList.remove('drag');
-      document.removeEventListener('mousemove', mv);
-      document.removeEventListener('mouseup',   up);
-    };
-    document.addEventListener('mousemove', mv);
-    document.addEventListener('mouseup',   up);
-  });
-}
-makeDivider('div-1', 'panel-left', 'panel-mid');
-makeDivider('div-2', 'panel-mid',  'panel-right');
-
-/* ═══════════════════════════════════════════════════════════
-   FEED LOG
-═══════════════════════════════════════════════════════════ */
-const $feed = document.getElementById('feed');
-function feedLine(text, cls) {
-  document.getElementById('feed-ph')?.remove();
-  const el = document.createElement('div');
-  el.className   = 'fl fl-' + cls;
-  el.textContent = text;
-  $feed.appendChild(el);
-  feedCount++;
-  if (feedCount > MAX_FEED) { $feed.querySelector('.fl')?.remove(); feedCount--; }
-  $feed.scrollTop = $feed.scrollHeight;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SHA-256 DISPATCHER  (now sends File to worker — O(1) RAM)
-═══════════════════════════════════════════════════════════ */
-async function sha256(fi) {
-  try {
-    const file = fi.fileObj ? fi.fileObj : await fi.handle.getFile();
-    const id   = ++_hashIdSeq;
-    // File is structured-cloned to worker; worker streams it chunk-by-chunk
-    _hashWorker.postMessage({ id, file, strategy: userHashStrategy });
-    return new Promise(resolve => _hashPending.set(id, resolve));
-  } catch {
-    return null;
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   FOLDER PICKING
-═══════════════════════════════════════════════════════════ */
-async function pickFolder() {
-  if (hasFSAPI()) {
-    limitedMode = false;
-    try { dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' }); }
-    catch { return; }
-    try {
-      const p = await dirHandle.requestPermission({ mode: 'readwrite' });
-      if (p !== 'granted') {
-        alert(t('Se necesita permiso de acceso. Acepta el permiso del navegador.',
-                'Access permission required. Accept the browser permission prompt.'));
-        return;
-      }
-    } catch {}
-    showConfirm(dirHandle.name);
-  } else {
-    limitedMode = true;
-    document.getElementById('mobile-input').click();
-  }
-}
-
-function showConfirm(name) {
-  document.getElementById('confirm-path-text').textContent = name;
-  showScreen('confirm');
-}
-
-function cancelPick() {
-  dirHandle = null;
-  showScreen('home');
-  document.getElementById('mobile-input').value = '';
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SCAN ORCHESTRATION
-═══════════════════════════════════════════════════════════ */
-async function beginScan() {
-  if (!dirHandle) return;
-
-  FILES.clear(); GROUPS.clear(); SEL.clear();
-  fileCount = 0; skipCount = 0; cancelled = false; scanning = true; feedCount = 0;
-  activeFilters.clear(); detectedExts.clear();
-
-  // Switch to virtual-scroller view
-  vs.reset();
-  showScreen('vs');
-
-  const fb = document.getElementById('filter-bar');
-  fb.classList.remove('visible');
-  fb.querySelectorAll('.fmt-chip:not(.all)').forEach(c => c.remove());
-  fb.querySelector('.fmt-chip.all').classList.add('active');
-  $feed.innerHTML = ''; feedCount = 0;
-
-  document.getElementById('nav-folder').style.display     = 'flex';
-  document.getElementById('nav-folder-name').textContent  = dirHandle.name;
-  document.getElementById('btn-stop').style.display       = 'flex';
-  document.getElementById('btn-reset').style.display      = 'none';
-  document.getElementById('pbar').style.width             = '0%';
-  document.getElementById('dupe-badge').textContent       = '0';
-  document.getElementById('dupe-badge').classList.add('z');
-  document.getElementById('btn-del').style.display        = 'none';
-  document.getElementById('prev-empty').style.display     = 'flex';
-  document.getElementById('prev-content').style.display   = 'none';
-  document.getElementById('btn-close-prev').style.display = 'none';
-  document.getElementById('prev-lbl').textContent         = '';
-  updateStats(); updateSelectionUI();
-
-  setDot('run', t('recopilando archivos…', 'collecting files…'));
-  await frame();
-  feedLine('📂  ' + dirHandle.name, 'dir');
-  await frame();
-
-  if (limitedMode) await collectFromInput(dirHandle._inputFiles);
-  else             await collect(dirHandle, dirHandle.name);
-  if (cancelled) { finishStopped(); return; }
-
-  setDot('run', t('calculando SHA-256…', 'computing SHA-256…'));
-  await frame();
-  await findDupes();
-  if (cancelled) { finishStopped(); return; }
-
-  scanning = false;
-  setDot('idle', t('completado', 'done'));
-  document.getElementById('pbar').style.width        = '100%';
-  document.getElementById('btn-stop').style.display  = 'none';
-  document.getElementById('btn-reset').style.display = 'flex';
-
-  const gs = [...GROUPS.values()].filter(g => g.length > 1);
-  feedLine('─────────────────────────────', 'info');
-  feedLine(
-    '✓  ' + fileCount + ' ' + t('archivos escaneados', 'files scanned') + ' · ' +
-    gs.length + ' ' + t('conjuntos de duplicados', 'duplicate sets') +
-    (skipCount ? ' · ' + skipCount + ' ' + t('carpetas omitidas', 'folders skipped') : ''),
-    'ok'
-  );
-
-  if (gs.length === 0) {
-    const okEl = document.getElementById('ok-screen');
-    okEl.innerHTML = `
-      <div class="home-icon" style="font-size:2.5rem;opacity:.3;"><i class="fas fa-circle-check"></i></div>
-      <h2 class="es">¡Sin duplicados!</h2><h2 class="en">No duplicates!</h2>
-      <p class="es">No se encontraron archivos idénticos en <strong>${esc(dirHandle.name)}</strong>.</p>
-      <p class="en">No identical files found in <strong>${esc(dirHandle.name)}</strong>.</p>
-      <button class="btn-primary" onclick="resetApp()">
-        <i class="fas fa-rotate-left"></i>
-        <span class="es">Nuevo escaneo</span><span class="en">New scan</span>
-      </button>`;
-    showScreen('ok');
-  }
-}
-
-function finishStopped() {
-  scanning = false;
-  setDot('stop', t('detenido', 'stopped'));
-  document.getElementById('btn-stop').style.display  = 'none';
-  document.getElementById('btn-reset').style.display = 'flex';
-  feedLine(t('— Escaneo detenido por el usuario —', '— Scan stopped by user —'), 'info');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COLLECT — File System Access API
-═══════════════════════════════════════════════════════════ */
-async function collect(dh, path) {
-  for await (const [name, handle] of dh.entries()) {
-    if (cancelled) return;
-    const fullPath = path + '/' + name;
-    if (handle.kind === 'directory') {
-      if (isBlocked(fullPath) || isUserIgnoredDir(name)) {
-        feedLine('✗  ' + name + '  [' + t('omitida', 'skipped') + ']', 'skip');
-        skipCount++; await frame(); continue;
-      }
-      feedLine('▸  ' + fullPath, 'dir'); await frame();
-      await collect(handle, fullPath);
-    } else {
-      try {
-        const file = await handle.getFile();
-        if (file.size < userMinFileSize) continue;
-        if (isUserIgnoredFile(name)) continue;
-        feedLine('   ' + name, 'file');
-        FILES.set(fullPath, { handle, size:file.size, name, dir:path, hash:null, _sid:null, canDelete:true });
-        fileCount++;
-        document.getElementById('scan-cnt').textContent = fileCount + ' ' + t('archivos', 'files');
-      } catch {}
-      if (fileCount % 15 === 0) await frame();
-    }
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   COLLECT — <input webkitdirectory> fallback
-═══════════════════════════════════════════════════════════ */
-async function collectFromInput(files) {
-  const seenDirs = new Set();
-  for (let i = 0; i < files.length; i++) {
-    if (cancelled) return;
-    const file  = files[i];
-    const rel   = file.webkitRelativePath;
-    const parts = rel.split('/');
-    const name  = parts[parts.length - 1];
-    const dir   = parts.slice(0, -1).join('/');
-
-    if (parts.some(p => BLOCKED.has(p.toLowerCase()) || isUserIgnoredDir(p))) { skipCount++; continue; }
-    if (file.size < userMinFileSize) continue;
-    if (isUserIgnoredFile(name)) continue;
-
-    if (!seenDirs.has(dir)) { seenDirs.add(dir); feedLine('▸  ' + dir, 'dir'); }
-    feedLine('   ' + name, 'file');
-    FILES.set(rel, { fileObj:file, handle:null, size:file.size, name, dir, hash:null, _sid:null, canDelete:false });
-    fileCount++;
-    document.getElementById('scan-cnt').textContent = fileCount + ' ' + t('archivos', 'files');
-    if (fileCount % 30 === 0) await frame();
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   FIND DUPLICATES
-═══════════════════════════════════════════════════════════ */
-async function findDupes() {
-  const bySize = new Map();
-  for (const [key, fi] of FILES) {
-    if (!bySize.has(fi.size)) bySize.set(fi.size, []);
-    bySize.get(fi.size).push({ key, ...fi });
-  }
-  const candidates = [...bySize.values()].filter(g => g.length > 1);
-  const total      = candidates.reduce((s, g) => s + g.length, 0);
-  if (total === 0) return;
-
-  feedLine('─────────────────────────────', 'info');
-  feedLine('SHA-256: ' + total + ' ' + t('candidatos por tamaño', 'size-matched candidates'), 'info');
-  if (userHashStrategy === 'sample')
-    feedLine(t('⚡ Modo muestras activo para archivos > 20 MB', '⚡ Sampling mode active for files > 20 MB'), 'info');
-  await frame();
-
-  let done  = 0;
-  const $pb = document.getElementById('pbar');
-
-  for (const group of candidates) {
-    if (cancelled) return;
-    for (const fi of group) {
-      if (cancelled) return;
-      feedLine('  ⚡ ' + fi.name, 'file');
-      const hash = await sha256(fi);
-      if (!hash) { done++; continue; }
-      fi.hash = hash;
-      if (FILES.has(fi.key)) FILES.get(fi.key).hash = hash;
-      if (!GROUPS.has(hash)) GROUPS.set(hash, []);
-      GROUPS.get(hash).push(fi);
-      if (GROUPS.get(hash).length >= 2) {
-        feedLine('💥 ' + t('DUPLICADO', 'DUPLICATE') + ': ' + fi.name, 'match');
-        renderGroup(hash); await frame();
-      }
-      done++;
-      $pb.style.width = Math.round(done / total * 100) + '%';
-      updateStats();
-    }
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RENDER GROUP  →  delegates to VirtualScroller
-═══════════════════════════════════════════════════════════ */
-function renderGroup(hash) {
-  const files = GROUPS.get(hash);
-  if (!files || files.length < 2) return;
-
-  const ext = files[0].name.includes('.') ? files[0].name.split('.').pop().toLowerCase() : '';
-
-  // Register file._sid mappings upfront (needed by selectAll / toggleSel)
-  files.forEach(fi => {
-    let h = 5381;
-    for (let j = 0; j < fi.key.length; j++) h = ((h << 5) + h) ^ fi.key.charCodeAt(j);
-    const sid = 'r' + (h >>> 0).toString(36);
-    fi._sid = sid;
-    if (FILES.has(fi.key)) FILES.get(fi.key)._sid = sid;
-  });
-
-  vs.add(hash);
-  addExtToFilter(ext);
-  if (activeFilters.size > 0 && !activeFilters.has(ext)) {
-    // Mark hidden immediately so it doesn't flash in
-    vs.setFilter(activeFilters);
-  }
-
-  const n     = [...GROUPS.values()].filter(g => g.length > 1).length;
-  const badge = document.getElementById('dupe-badge');
-  badge.textContent = n;
-  badge.classList.toggle('z', n === 0);
-  updateStats();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SELECTION
-═══════════════════════════════════════════════════════════ */
-function toggleSel(key, checked) {
-  if (limitedMode) return;
-  checked ? SEL.add(key) : SEL.delete(key);
-  const fi = FILES.get(key);
-  if (fi && fi._sid) document.getElementById(fi._sid)?.classList.toggle('sel', checked);
-  updateSelectionUI();
-}
-
-function selectAll() {
-  if (limitedMode) return;
-  for (const [, files] of GROUPS) {
-    if (files.length < 2) continue;
-    files.forEach((fi, i) => {
-      if (i === 0 || SEL.has(fi.key)) return;
-      SEL.add(fi.key);
-      if (fi._sid) {
-        const row = document.getElementById(fi._sid);
-        if (row) { row.classList.add('sel'); const cb = row.querySelector('input[type=checkbox]'); if (cb) cb.checked = true; }
-      }
-    });
-  }
-  updateSelectionUI();
-}
-
-function deselectAll() {
-  for (const key of [...SEL]) {
-    const fi = FILES.get(key);
-    if (fi && fi._sid) {
-      const row = document.getElementById(fi._sid);
-      if (row) { row.classList.remove('sel'); const cb = row.querySelector('input[type=checkbox]'); if (cb) cb.checked = false; }
-    }
-  }
-  SEL.clear();
-  updateSelectionUI();
-}
-
-function updateSelectionUI() {
-  const n    = SEL.size;
-  const size = [...SEL].reduce((s, k) => { const fi = FILES.get(k); return s + (fi ? fi.size : 0); }, 0);
-  document.getElementById('btn-del').style.display = (!limitedMode && n > 0) ? 'block' : 'none';
-  document.getElementById('sel-cnt').textContent   = n;
-  const infoEl = document.getElementById('sel-info');
-  if (n === 0) {
-    infoEl.style.display = 'none';
-  } else {
-    const label = n === 1
-      ? t('1 archivo seleccionado', '1 file selected')
-      : t(n + ' archivos seleccionados', n + ' files selected');
-    infoEl.textContent   = '▶ ' + label + ' · ' + fmtSize(size);
-    infoEl.style.display = 'inline';
-  }
-}
-
-/* ═══════════════════════════════════════════════════════════
-   STATISTICS
-═══════════════════════════════════════════════════════════ */
-function updateStats() {
-  document.getElementById('st-files').textContent = fileCount;
-  const gs = [...GROUPS.values()].filter(g => g.length > 1);
-  const w  = gs.reduce((s, g) => s + g[0].size * (g.length - 1), 0);
-  document.getElementById('st-size').textContent = w > 0 ? fmtSize(w) : '—';
-  const badge = document.getElementById('dupe-badge');
-  badge.textContent = gs.length;
-  badge.classList.toggle('z', gs.length === 0);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   FILE PREVIEW
-═══════════════════════════════════════════════════════════ */
-async function previewFile(key) {
-  const fi = FILES.get(key);
-  if (!fi) return;
-
-  document.getElementById('prev-empty').style.display     = 'none';
-  document.getElementById('btn-close-prev').style.display = 'block';
-  const $c = document.getElementById('prev-content');
-  $c.style.display = 'block';
-  document.getElementById('prev-lbl').textContent = fi.name;
-
-  $c.innerHTML = `
-    <div style="margin-bottom:12px;">
-      <div class="pv-name">${esc(fi.name)}</div>
-      <div class="pv-meta">${esc(fi.dir)} &nbsp;&middot;&nbsp; <span class="ac">${fmtSize(fi.size)}</span></div>
-    </div>
-    <div id="pv-loading" style="color:var(--dim);font-family:'Fira Code',monospace;font-size:.72rem;text-align:center;padding:20px;">
-      ${t('Cargando…', 'Loading…')}
-    </div>`;
-
-  if (window.innerWidth <= 768)
-    document.getElementById('panel-right').scrollIntoView({ behavior:'smooth', block:'start' });
-
-  try {
-    const file = fi.fileObj ? fi.fileObj : await fi.handle.getFile();
-    document.getElementById('pv-loading')?.remove();
-
-    if (isImg(fi.name)) {
-      const url  = URL.createObjectURL(file);
-      const wrap = document.createElement('div');
-      wrap.style.cssText = 'text-align:center;';
-      const img  = document.createElement('img');
-      img.style.cssText  = 'max-width:100%;max-height:calc(100vh - 160px);border-radius:4px;border:1px solid var(--border);display:block;margin:0 auto;';
-      img.src    = url; img.alt = fi.name;
-      img.onload = () => URL.revokeObjectURL(url);
-      wrap.appendChild(img); $c.appendChild(wrap);
-
-    } else if (isVideo(fi.name)) {
-      const url   = URL.createObjectURL(file);
-      const video = document.createElement('video');
-      video.controls = true; video.preload = 'metadata';
-      video.style.cssText = 'max-width:100%;max-height:calc(100vh - 200px);border-radius:4px;border:1px solid var(--border);display:block;margin:0 auto;background:#000;';
-      video.src = url;
-      video.addEventListener('error', () => URL.revokeObjectURL(url), { once:true });
-      $c.appendChild(video);
-      const note = document.createElement('div');
-      note.style.cssText = 'font-family:"Fira Code",monospace;font-size:.6rem;color:var(--muted);margin-top:7px;text-align:right;';
-      note.textContent   = '.' + fi.name.split('.').pop().toLowerCase() + ' · ' + fmtSize(fi.size);
-      $c.appendChild(note);
-
-    } else if (isAudio(fi.name)) {
-      const url   = URL.createObjectURL(file);
-      const wrap  = document.createElement('div');
-      wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:16px;padding:28px 14px;text-align:center;';
-      const ico   = document.createElement('i');
-      ico.className      = getIcon(fi.name);
-      ico.style.cssText  = 'font-size:3rem;color:var(--dim);';
-      const audio = document.createElement('audio');
-      audio.controls = true; audio.preload = 'metadata';
-      audio.style.cssText = 'width:100%;max-width:270px;';
-      audio.src = url;
-      audio.addEventListener('error', () => URL.revokeObjectURL(url), { once:true });
-      const note = document.createElement('div');
-      note.style.cssText = 'font-family:"Fira Code",monospace;font-size:.62rem;color:var(--muted);';
-      note.textContent   = '.' + fi.name.split('.').pop().toLowerCase() + ' · ' + fmtSize(fi.size);
-      wrap.appendChild(ico); wrap.appendChild(audio); wrap.appendChild(note);
-      $c.appendChild(wrap);
-
-    } else if (isTxt(fi.name) && fi.size < 1048576) {
-      const text = await file.text();
-      const ext  = fi.name.includes('.') ? fi.name.split('.').pop().toLowerCase() : '';
-      const pre  = document.createElement('pre');
-      pre.style.cssText  = `font-family:'Fira Code',monospace;font-size:.72rem;line-height:1.65;color:var(--white);background:var(--code-bg);padding:12px;border-radius:4px;border:1px solid var(--border);white-space:pre-wrap;word-break:break-all;max-height:calc(100vh - 160px);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--red) transparent;`;
-      pre.textContent    = text.length > 12000 ? text.substring(0, 12000) + '\n… (' + t('truncado', 'truncated') + ')' : text;
-      $c.appendChild(pre);
-      const note = document.createElement('div');
-      note.style.cssText = 'font-family:"Fira Code",monospace;font-size:.6rem;color:var(--muted);margin-top:5px;text-align:right;';
-      note.textContent   = (ext ? '.' + ext : t('sin extensión', 'no ext')) + ' · ' + fmtSize(fi.size);
-      $c.appendChild(note);
-
-    } else if (fi.name.toLowerCase().endsWith('.pdf')) {
-      const url   = URL.createObjectURL(file);
-      const embed = document.createElement('embed');
-      embed.src  = url; embed.type = 'application/pdf';
-      embed.style.cssText = 'width:100%;height:calc(100vh - 160px);border:1px solid var(--border);border-radius:4px;';
-      $c.appendChild(embed);
-
-    } else {
-      const ext = fi.name.includes('.') ? fi.name.split('.').pop().toUpperCase() : t('SIN EXT', 'NO EXT');
-      const d   = document.createElement('div');
-      d.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 16px;text-align:center;';
-      d.innerHTML = `
-        <i class="${getIcon(fi.name)}" style="font-size:3.5rem;color:var(--dim);"></i>
-        <div style="font-size:1rem;font-weight:700;color:var(--white);">.${ext.toLowerCase()}</div>
-        <div style="font-size:1.35rem;font-weight:700;color:var(--red);">${fmtSize(fi.size)}</div>
-        <div style="font-family:'Fira Code',monospace;font-size:.63rem;color:var(--muted);max-width:220px;line-height:1.7;">
-          ${t(
-            'Archivo binario — sin previsualización.<br>Contenido byte a byte idéntico al del resto de copias (mismo SHA-256).',
-            'Binary file — no preview available.<br>Content is byte-for-byte identical to all other copies (same SHA-256).'
-          )}
-        </div>`;
-      $c.appendChild(d);
-    }
-  } catch(e) {
-    document.getElementById('pv-loading')?.remove();
-    $c.innerHTML += `<div style="color:var(--red);font-size:.72rem;font-family:'Fira Code',monospace;margin-top:8px;">${t('Error al cargar', 'Error loading')}: ${esc(e.message)}</div>`;
-  }
-}
-
-function closePreview() {
-  document.getElementById('prev-content').style.display   = 'none';
-  document.getElementById('prev-empty').style.display     = 'flex';
-  document.getElementById('btn-close-prev').style.display = 'none';
-  document.getElementById('prev-lbl').textContent         = '';
-  const video = document.querySelector('#prev-content video');
-  const audio = document.querySelector('#prev-content audio');
-  const embed = document.querySelector('#prev-content embed');
-  if (video?.src?.startsWith('blob:')) URL.revokeObjectURL(video.src);
-  if (audio?.src?.startsWith('blob:')) URL.revokeObjectURL(audio.src);
-  if (embed?.src?.startsWith('blob:')) URL.revokeObjectURL(embed.src);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   RESET
-═══════════════════════════════════════════════════════════ */
-function resetApp() {
-  cancelled = true; scanning = false; limitedMode = false;
-  dirHandle = null; FILES.clear(); GROUPS.clear(); SEL.clear();
-  fileCount = 0; skipCount = 0; feedCount = 0;
-  activeFilters.clear(); detectedExts.clear();
-
-  closePreview();
-  vs.reset();
-
-  document.getElementById('mobile-input').value = '';
-
-  const fb = document.getElementById('filter-bar');
-  fb.classList.remove('visible');
-  fb.querySelectorAll('.fmt-chip:not(.all)').forEach(c => c.remove());
-  fb.querySelector('.fmt-chip.all')?.classList.add('active');
-
-  const limitedWarnVisible = !hasFSAPI();
-  document.getElementById('limited-warn').style.display = limitedWarnVisible ? 'block' : 'none';
-
-  showScreen('home');
-
-  $feed.innerHTML = `
-    <div id="feed-ph" style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--dim);font-size:.75rem;text-align:center;pointer-events:none;font-family:'Fira Code',monospace;">
-      <i class="fas fa-terminal" style="font-size:1.8rem;"></i>
-      <span class="es">El registro aparecerá<br>aquí durante el escaneo</span>
-      <span class="en">The log will appear<br>here during the scan</span>
-    </div>`;
-
-  setDot('idle', t('inactivo', 'idle'));
-  document.getElementById('scan-cnt').textContent          = '';
-  document.getElementById('pbar').style.width              = '0%';
-  document.getElementById('dupe-badge').textContent        = '0';
-  document.getElementById('dupe-badge').classList.add('z');
-  document.getElementById('btn-del').style.display         = 'none';
-  document.getElementById('btn-stop').style.display        = 'none';
-  document.getElementById('btn-reset').style.display       = 'none';
-  document.getElementById('nav-folder').style.display      = 'none';
-  document.getElementById('prev-empty').style.display      = 'flex';
-  document.getElementById('prev-content').style.display    = 'none';
-  document.getElementById('btn-close-prev').style.display  = 'none';
-  document.getElementById('prev-lbl').textContent          = '';
-  document.getElementById('panel-left').classList.remove('mobile-open');
-  document.getElementById('mobile-feed-btn').classList.remove('feed-visible');
-  updateStats(); updateSelectionUI(); updateCompatNote();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   DELETE MODAL
-═══════════════════════════════════════════════════════════ */
-function openModal() {
-  if (limitedMode) return;
-  const list = document.getElementById('modal-list');
-  list.innerHTML = '';
-  for (const key of SEL) {
-    const fi = FILES.get(key);
-    if (fi) { const d = document.createElement('div'); d.textContent = fi.dir + '/' + fi.name; list.appendChild(d); }
-  }
-  document.getElementById('modal-input').value    = '';
-  document.getElementById('btn-confirm').disabled = true;
-  document.getElementById('modal-ov').classList.add('on');
-}
-
-function checkConfirm(v) {
-  document.getElementById('btn-confirm').disabled = v !== t('CONFIRMAR', 'CONFIRM');
-}
-
-function closeModal() { document.getElementById('modal-ov').classList.remove('on'); }
-
-async function execDelete() {
-  if (limitedMode) return;
-  closeModal();
-  for (const key of [...SEL]) {
-    const fi = FILES.get(key);
-    if (!fi || !fi.handle) continue;
-    try {
-      await fi.handle.remove();
-      feedLine('🗑  ' + t('Eliminado', 'Deleted') + ': ' + fi.name, 'match');
-      FILES.delete(key); SEL.delete(key);
-    } catch(e) {
-      feedLine('✗  ' + t('Error al eliminar', 'Delete error') + ': ' + fi.name + ' — ' + e.message, 'err');
-    }
-  }
-
-  // Remove group cards where only the protected original remains
-  for (const [hash, files] of [...GROUPS.entries()]) {
-    const alive = files.filter(fi => FILES.has(fi.key));
-    if (alive.length < 2) {
-      vs.remove(hash);
-      GROUPS.delete(hash);
-    }
-  }
-
-  updateStats(); updateSelectionUI();
-}
-
-/* ═══════════════════════════════════════════════════════════
-   ③ PWA  (Manifest as Data URI + Inline Blob Service Worker)
-   ───────────────────────────────────────────────────────────
-   The manifest is generated at runtime and injected as a
-   base64 data URI into the <link rel="manifest"> tag.
-   The Service Worker is a self-contained Blob URL; it uses a
-   Cache-first strategy so the app (including CDN fonts/icons)
-   runs 100% offline after the first load.
-   Requires HTTPS or localhost — standard PWA prerequisite.
-═══════════════════════════════════════════════════════════ */
-(function setupPWA() {
-
-  /* ── Manifest ── */
-  const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    <rect width="100" height="100" rx="20" fill="#ff0033"/>
-    <text x="50" y="68" font-size="52" text-anchor="middle" fill="white" font-family="monospace" font-weight="700">D</text>
-  </svg>`;
-  const iconB64 = btoa(ICON_SVG);
-  const iconUri = 'data:image/svg+xml;base64,' + iconB64;
-
-  const manifest = {
-    name: 'DupeCleaner',
-    short_name: 'DupeCleaner',
-    description: 'Find and delete duplicate files using SHA-256',
-    start_url: '.',
-    display: 'standalone',
-    background_color: '#050505',
-    theme_color: '#ff0033',
-    icons: [
-      { src: iconUri, sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
-    ]
-  };
-  try {
-    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifest))));
-    document.getElementById('pwa-manifest').href = 'data:application/manifest+json;base64,' + b64;
-  } catch(e) { console.warn('[PWA] Manifest inject failed:', e); }
-
-  /* ── Service Worker ── */
-  if (!('serviceWorker' in navigator)) return;
-
-  const CACHE   = 'dupecleaner-v1';
-  const SW_CODE = `
-const CACHE = '${CACHE}';
-
-self.addEventListener('install', evt => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', evt => {
-  evt.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', evt => {
-  /* Only cache GET requests to external origins (fonts, icons CDN).
-     Same-origin requests (the HTML file itself) bypass the SW so
-     the user always gets the freshest version when online. */
-  const url = new URL(evt.request.url);
-  const isCDN = url.origin !== self.location.origin;
-
-  if (evt.request.method !== 'GET') return;
-
-  if (isCDN) {
-    /* Cache-first for CDN assets (FontAwesome, Google Fonts) */
-    evt.respondWith(
-      caches.open(CACHE).then(async cache => {
-        const cached = await cache.match(evt.request);
-        if (cached) return cached;
-        try {
-          const resp = await fetch(evt.request);
-          if (resp.ok) cache.put(evt.request, resp.clone());
-          return resp;
-        } catch {
-          return cached || Response.error();
-        }
-      })
-    );
-  } else {
-    /* Network-first for local files; fall back to cache when offline */
-    evt.respondWith(
-      fetch(evt.request).catch(() => caches.match(evt.request))
-    );
-  }
-});
-`;
-
-  try {
-    const blob   = new Blob([SW_CODE], { type: 'application/javascript' });
-    const swUrl  = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl, { scope: './' })
-      .then(reg => {
-        console.log('[DupeCleaner] SW registered, scope:', reg.scope);
-      })
-      .catch(err => console.warn('[DupeCleaner] SW registration failed:', err));
-  } catch(e) { console.warn('[PWA] SW setup failed:', e); }
-
-})();
-
-</script>
+<script type="module" src="src/app.js"></script>
 </body>
 </html>
