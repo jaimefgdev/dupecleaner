@@ -30,6 +30,7 @@ export class VirtualScroller {
     this._totalH  = 0;
     this._raf     = null;
     this._OVERSCAN = 3;
+    this._filter  = new Set(); // extensiones activas (vacío = todas)
 
     scrollEl.addEventListener('scroll', () => this._sched(), { passive: true });
     // Re-render on resize (viewport height change)
@@ -43,11 +44,14 @@ export class VirtualScroller {
   add(hash) {
     const ext    = this._hooks.extOf(hash);
     const height = this._est(hash);
-    const item   = { hash, top: this._totalH, height, ext, hidden: false };
+    const hidden = this._filter.size > 0 && !this._filter.has(ext);
+    const item   = { hash, top: this._totalH, height, ext, hidden };
     this._idxMap.set(hash, this._items.length);
     this._items.push(item);
+    // O(1): no se recalcula la lista visible ni se mueve el scroll
+    if (hidden) return;
+    this._visible.push(this._items.length - 1);
     this._totalH += height;
-    this._visible = this._buildVisible();
     this._spacer.style.height = this._totalH + 'px';
     this._sched();
   }
@@ -61,12 +65,13 @@ export class VirtualScroller {
     const el = this._rendered.get(hash);
     if (el) { this._release(el); this._rendered.delete(hash); }
 
-    const item = this._items[idx];
-    this._totalH -= item.height;
+    const item  = this._items[idx];
+    const shift = item.hidden ? 0 : item.height;
+    this._totalH -= shift;
 
     // Shift tops of all items after this one
     for (let i = idx + 1; i < this._items.length; i++) {
-      this._items[i].top -= item.height;
+      this._items[i].top -= shift;
       // If currently rendered, update its transform immediately
       const rendEl = this._rendered.get(this._items[i].hash);
       if (rendEl) rendEl.style.transform = `translateY(${this._items[i].top}px)`;
@@ -119,6 +124,7 @@ export class VirtualScroller {
 
   /* ── Apply format filter — recomputes visible set & positions ── */
   setFilter(activeFilters) {
+    this._filter = new Set(activeFilters);
     // Mark each item as hidden or not
     for (const item of this._items) {
       item.hidden = activeFilters.size > 0 && !activeFilters.has(item.ext);
@@ -141,8 +147,10 @@ export class VirtualScroller {
 
   /* ── Clear all state (scan reset) ── */
   reset() {
-    for (const [, el] of this._rendered) this._release(el);
+    for (const [, el] of this._rendered) el.remove();
+    for (const el of this._pool) el.remove();
     this._rendered.clear();
+    this._filter = new Set();
     this._items.length = 0;
     this._idxMap.clear();
     this._visible.length = 0;
@@ -160,11 +168,11 @@ export class VirtualScroller {
   }
 
   _release(el) {
-    el.style.visibility = 'hidden';
     el.innerHTML = '';
+    // Keep pool bounded; extra nodes leave the DOM instead of lingering hidden
+    if (this._pool.length >= 40) { el.remove(); return; }
+    el.style.visibility = 'hidden';
     this._pool.push(el);
-    // Keep pool bounded to avoid memory leaks
-    if (this._pool.length > 40) this._pool.length = 40;
   }
 
   /* ── Build the filtered-visible index list ── */

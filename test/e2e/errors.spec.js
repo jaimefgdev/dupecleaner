@@ -93,6 +93,8 @@ test('un archivo ilegible y una carpeta ilegible se registran y el escaneo termi
 });
 
 test('detener corta al momento un hash largo y el siguiente escaneo funciona', async ({ page }) => {
+  // Motor lento a propósito (SHA-256 en JS, 1 worker) para que haya un hash en curso que cortar
+  await page.goto('/?perf=legacy');
   const size = 150 * MB; // ~7 s con el SHA-256 en JS
   await writeTree(page, 'grande', { 'a.bin': { size }, 'b.bin': { size } });
   await writeTree(page, 'peq', { 'a.txt': 'x', 'b.txt': 'x' });

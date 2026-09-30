@@ -38,3 +38,24 @@ test('removeFile disuelve el grupo cuando queda un solo archivo', () => {
   assert.equal(ix.dupGroups().length, 0);
   assert.equal(ix.files.has(b.id), false);
 });
+
+test('contadores incrementales coinciden con el cálculo completo', () => {
+  const ix = new DupeIndex();
+  const recs = [];
+  for (let i = 0; i < 40; i++) recs.push(add(ix, 'f' + i, 10 + (i % 3)));
+  const check = () => {
+    const gs = ix.dupGroups();
+    assert.equal(ix.dupGroupCount, gs.length);
+    assert.equal(ix.recoverableBytes(), gs.reduce((s, g) => s + g.size * (g.files.length - 1), 0));
+  };
+  for (const r of recs) { ix.addHash(r, 'h' + (r.id % 4)); check(); }
+  for (const r of recs.filter((_, i) => i % 3 === 0)) { ix.removeFile(r.id); check(); }
+});
+
+test('el original es siempre el primero en orden de escaneo, aunque los hashes lleguen desordenados', () => {
+  const ix = new DupeIndex();
+  const [a, b, c] = ['a', 'b', 'c'].map(n => add(ix, n, 7));
+  ix.addHash(c, 'h'); ix.addHash(a, 'h'); const g = ix.addHash(b, 'h');
+  assert.deepEqual(g.files.map(r => r.name), ['a', 'b', 'c']);
+  assert.equal(ix.keeperOf(g), a);
+});
