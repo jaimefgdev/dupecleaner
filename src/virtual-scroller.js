@@ -89,6 +89,11 @@ export class VirtualScroller {
     this._sched();
   }
 
+  /* ── Rebuild every mounted card (e.g. after a language switch) ── */
+  refreshAll() {
+    for (const [hash, el] of this._rendered) { this._hooks.render(el, hash); this._measureLater(hash, el); }
+  }
+
   /* ── Measure actual height after paint & shift the following items ── */
   _measureLater(hash, el) {
     requestAnimationFrame(() => {
