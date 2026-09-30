@@ -93,11 +93,16 @@ export class SHA256 {
 /* Archivos mayores que este umbral se comparan por muestras en modo rápido */
 export const SAMPLE_THRESHOLD = 20 * 1024 * 1024;
 export const SAMPLE_CHUNK     =  2 * 1024 * 1024;
+/* Prefiltro: hash de los primeros bytes para descartar candidatos baratos */
+export const PREFIX_BYTES     = 64 * 1024;
 
 /** true si un archivo de este tamaño se compara solo por muestras con esta estrategia */
-export const isSampled = (size, strategy) => strategy !== 'full' && size > SAMPLE_THRESHOLD;
+export const isSampled = (size, strategy) => strategy === 'sample' && size > SAMPLE_THRESHOLD;
 
-/* ── Stream a Blob chunk-by-chunk into the SHA256 state ── */
+/** true si merece la pena el prefiltro (si no, el hash final lee casi lo mismo) */
+export const needsPrefix = size => size > PREFIX_BYTES * 2;
+
+/* ── Stream a Blob chunk-by-chunk into a hasher with update(Uint8Array) ── */
 export async function pipeBlob(sha, blob) {
   const reader = blob.stream().getReader();
   try {
@@ -111,22 +116,32 @@ export async function pipeBlob(sha, blob) {
   }
 }
 
+/** Motor en JavaScript puro con la misma interfaz que hash-wasm */
+export const jsEngine = () => {
+  let sha;
+  return { init() { sha = new SHA256(); }, update(d) { sha.update(d); }, digest() { return sha.final(); } };
+};
+
 /**
  * Hash de un Blob/File.
  * strategy 'full'   → SHA-256 de todo el contenido.
  * strategy 'sample' → para archivos > SAMPLE_THRESHOLD, SHA-256 de tres trozos
  *                     (inicio, centro, final). NO prueba que dos archivos sean
  *                     idénticos: solo sirve para detectar candidatos.
+ * strategy 'prefix' → SHA-256 de los primeros PREFIX_BYTES (prefiltro).
+ * engine: objeto { init, update, digest } reutilizable; por defecto JS puro.
  */
-export async function hashBlob(blob, strategy = 'full') {
-  const sha = new SHA256();
-  if (!isSampled(blob.size, strategy)) {
-    await pipeBlob(sha, blob);
+export async function hashBlob(blob, strategy = 'full', engine = jsEngine()) {
+  engine.init();
+  if (strategy === 'prefix') {
+    await pipeBlob(engine, blob.slice(0, PREFIX_BYTES));
+  } else if (!isSampled(blob.size, strategy)) {
+    await pipeBlob(engine, blob);
   } else {
     const mid = Math.max(0, Math.floor(blob.size / 2) - SAMPLE_CHUNK / 2);
-    await pipeBlob(sha, blob.slice(0,   SAMPLE_CHUNK));
-    await pipeBlob(sha, blob.slice(mid, mid + SAMPLE_CHUNK));
-    await pipeBlob(sha, blob.slice(Math.max(0, blob.size - SAMPLE_CHUNK)));
+    await pipeBlob(engine, blob.slice(0,   SAMPLE_CHUNK));
+    await pipeBlob(engine, blob.slice(mid, mid + SAMPLE_CHUNK));
+    await pipeBlob(engine, blob.slice(Math.max(0, blob.size - SAMPLE_CHUNK)));
   }
-  return sha.final();
+  return engine.digest('hex');
 }

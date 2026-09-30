@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, randomBytes } from 'node:crypto';
-import { SHA256, hashBlob, isSampled, SAMPLE_THRESHOLD, SAMPLE_CHUNK } from '../../src/sha256.js';
+import { SHA256, hashBlob, isSampled, needsPrefix, SAMPLE_THRESHOLD, SAMPLE_CHUNK, PREFIX_BYTES } from '../../src/sha256.js';
 
 const nodeSha = buf => createHash('sha256').update(buf).digest('hex');
 
@@ -40,4 +40,34 @@ test('el modo muestras NO distingue archivos que solo difieren fuera de las mues
   b[SAMPLE_CHUNK + 100] = 1; // fuera de inicio, centro y final
   assert.equal(await hashBlob(new Blob([a]), 'sample'), await hashBlob(new Blob([b]), 'sample'));
   assert.notEqual(await hashBlob(new Blob([a]), 'full'), await hashBlob(new Blob([b]), 'full'));
+});
+
+test('motor WebAssembly (hash-wasm) y motor JS dan el mismo resultado en todas las estrategias', async () => {
+  const { createSHA256 } = await import('../../src/wasm-sha256.js');
+  const wasm = await createSHA256();
+  for (const n of [0, 1, 64, 65_536, 200_000, SAMPLE_THRESHOLD + 12_345]) {
+    const blob = new Blob([randomBytes(n)]);
+    for (const strategy of ['full', 'sample', 'prefix']) {
+      assert.equal(await hashBlob(blob, strategy, wasm), await hashBlob(blob, strategy), `n=${n} ${strategy}`);
+    }
+  }
+});
+
+test('el prefiltro solo mira los primeros 64 KB', async () => {
+  const a = randomBytes(PREFIX_BYTES * 3);
+  const b = Buffer.from(a); b[PREFIX_BYTES + 1] ^= 1;
+  assert.equal(await hashBlob(new Blob([a]), 'prefix'), await hashBlob(new Blob([b]), 'prefix'));
+  assert.equal(await hashBlob(new Blob([a]), 'prefix'), nodeSha(a.subarray(0, PREFIX_BYTES)));
+  assert.equal(needsPrefix(PREFIX_BYTES * 2), false);
+  assert.equal(needsPrefix(PREFIX_BYTES * 2 + 1), true);
+});
+
+test('hash-wasm es mucho más rápido que el SHA-256 en JS', async () => {
+  const { createSHA256 } = await import('../../src/wasm-sha256.js');
+  const wasm = await createSHA256();
+  const blob = new Blob([randomBytes(32 * 1024 * 1024)]);
+  let t = performance.now(); await hashBlob(blob, 'full');       const js = performance.now() - t;
+  t = performance.now();     await hashBlob(blob, 'full', wasm); const wa = performance.now() - t;
+  console.log(`SHA-256 32 MB: JS ${js.toFixed(0)} ms · WASM ${wa.toFixed(0)} ms (${(js / wa).toFixed(1)}×)`);
+  assert.ok(js / wa > 4, `solo ${(js / wa).toFixed(1)}×`);
 });
