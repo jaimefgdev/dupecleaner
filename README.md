@@ -22,6 +22,8 @@ DupeCleaner removes files, so it is built to never remove the wrong one:
 - **The original is always kept.** The first file of every set (in scan order) cannot be selected, not even by forcing the checkbox.
 - **Fast mode is honest.** Files over 20 MB are compared by samples (start, middle, end) in fast mode; those sets are marked **probable** and are always fully verified before removal.
 
+![The remove dialog: quarantine is the default, permanent deletion is an explicit option](docs/screenshot-quarantine.png)
+
 ### Features
 
 - WebAssembly SHA-256 ([hash-wasm](https://github.com/Daninet/hash-wasm)) in a pool of Web Workers — the UI never freezes
@@ -123,6 +125,8 @@ DupeCleaner quita archivos, así que está hecho para no quitar nunca el que no 
 - **Verificación completa justo antes de tocar nada.** Cada copia y su original se vuelven a leer y se comparan con el SHA-256 **completo**, y su tamaño y fecha no pueden haber cambiado desde el escaneo. Si algo no cuadra, el archivo no se toca y el registro explica por qué.
 - **El original siempre se conserva.** El primer archivo de cada conjunto (en orden de escaneo) no se puede seleccionar, ni forzando la casilla.
 - **El modo rápido no engaña.** En modo rápido, los archivos de más de 20 MB se comparan por muestras (inicio, centro y final); esos conjuntos se marcan como **probables** y siempre se verifican completos antes de quitarlos.
+
+![El diálogo de quitar: la cuarentena es la opción por defecto y el borrado definitivo es una opción explícita](docs/screenshot-quarantine.png)
 
 ### Características
 
