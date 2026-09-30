@@ -5,7 +5,7 @@
 // - Recursos de CDN (iconos, fuentes): primero la caché.
 // Al cambiar cualquier archivo de la app, sube VERSION para renovar la caché.
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const CACHE   = 'dupecleaner-' + VERSION;
 
 const PRECACHE = [
@@ -31,6 +31,8 @@ const PRECACHE = [
   'src/safety.js',
   'src/sha256.js',
   'src/virtual-scroller.js',
+  'src/wasm-sha256.js',
+  'vendor/hash-wasm/sha256.umd.min.js',
 ];
 
 self.addEventListener('install', evt => {

@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 const PORT = 4173;
 
 export default defineConfig({
-  testDir: 'test/e2e',
+  testDir: 'test',
   timeout: 90_000,
   expect: { timeout: 20_000 },
   fullyParallel: true,
@@ -13,7 +13,10 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}/`,
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
+  projects: [
+    { name: 'chromium', testDir: 'test/e2e',  use: { browserName: 'chromium' } },
+    { name: 'perf',     testDir: 'test/perf', use: { browserName: 'chromium' }, timeout: 300_000 },
+  ],
   webServer: {
     command: `node scripts/serve.mjs ${PORT}`,
     url: `http://localhost:${PORT}/`,

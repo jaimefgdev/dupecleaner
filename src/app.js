@@ -1,6 +1,6 @@
 // DupeCleaner — interfaz. La lógica pura vive en los módulos importados.
 import { createHasher } from './hasher.js';
-import { isSampled } from './sha256.js';
+import { isSampled, needsPrefix } from './sha256.js';
 import { DupeIndex } from './dupe-index.js';
 import { planRemoval, verifyBeforeRemoval, REFUSE } from './safety.js';
 import { moveToQuarantine, removeFile } from './quarantine.js';
@@ -17,7 +17,35 @@ const frame    = () => new Promise(r => requestAnimationFrame(r));
 const hasFSAPI = () => 'showDirectoryPicker' in window;
 const MAX_FEED = 300;
 
-const hasher = createHasher();
+/* Ajustes de rendimiento. `?perf=legacy` reproduce el comportamiento anterior
+   (SHA-256 en JS, un worker, sin prefiltro, un fotograma por carpeta, cada 15
+   archivos y por duplicado); solo sirve para la prueba de rendimiento. */
+const PERF = new URLSearchParams(location.search).get('perf') === 'legacy'
+  ? { legacy: true,  engine: 'js',   workers: 1,         prefilter: false }
+  : { legacy: false, engine: 'wasm', workers: undefined, prefilter: true, yieldMs: 12 };
+
+const hasher = createHasher({ engine: PERF.engine, ...(PERF.workers ? { size: PERF.workers } : {}) });
+
+/* Cede el control al navegador como mucho cada PERF.yieldMs, no en cada
+   elemento, y sin esperar a un fotograma entero: una tarea nueva basta para
+   que el navegador pinte y atienda clics. Además sigue avanzando en una
+   pestaña oculta, donde requestAnimationFrame se congela. */
+const yieldTask = globalThis.scheduler?.yield
+  ? () => globalThis.scheduler.yield()
+  : () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });
+
+let lastYield = 0;
+let legacyCount = 0;
+async function breathe(kind) {
+  if (PERF.legacy) {
+    if (kind === 'hash' || (kind === 'file' && ++legacyCount % 15)) return;
+    await frame();
+    return;
+  }
+  if (performance.now() - lastYield < PERF.yieldMs) return;
+  await yieldTask();
+  lastYield = performance.now();
+}
 
 /* ═══════════════════════════════════════════════════════════
    STATE
@@ -30,7 +58,6 @@ let pending  = null;  // carpeta elegida, pendiente de confirmar
 let scan     = null;  // escaneo actual
 let scanSeq  = 0;
 let removing = false;
-let feedCount = 0;
 
 const newScan = p => ({
   id: ++scanSeq, cancelled: false, done: false,
@@ -199,7 +226,7 @@ function toggleLang() {
   updateCompatNote();
   updateSelectionUI();
   updateConfirmState();
-  if (scan) setScanCount(scan);
+  updateStats();
   vs.refreshAll(); // las tarjetas llevan textos traducidos
 }
 
@@ -339,15 +366,38 @@ makeDivider('div-2', 'panel-mid',  'panel-right');
 const $feed = $('feed');
 const FEED_PLACEHOLDER = $feed.innerHTML;
 
+/* Las líneas se acumulan y se pintan una vez por fotograma */
+let feedQueue = [];
+let feedRaf   = 0;
+
 function feedLine(text, cls) {
+  feedQueue.push([text, cls]);
+  if (feedQueue.length > MAX_FEED) feedQueue.splice(0, feedQueue.length - MAX_FEED);
+  if (!feedRaf) feedRaf = requestAnimationFrame(flushFeed);
+}
+
+function flushFeed() {
+  feedRaf = 0;
+  if (!feedQueue.length) return;
   $('feed-ph')?.remove();
-  const el = document.createElement('div');
-  el.className   = 'fl fl-' + cls;
-  el.textContent = text;
-  $feed.appendChild(el);
-  feedCount++;
-  if (feedCount > MAX_FEED) { $feed.querySelector('.fl')?.remove(); feedCount--; }
+  const frag = document.createDocumentFragment();
+  for (const [text, cls] of feedQueue) {
+    const el = document.createElement('div');
+    el.className   = 'fl fl-' + cls;
+    el.textContent = text;
+    frag.appendChild(el);
+  }
+  feedQueue = [];
+  $feed.appendChild(frag);
+  let extra = $feed.childElementCount - MAX_FEED;
+  while (extra-- > 0) $feed.firstElementChild.remove();
   $feed.scrollTop = $feed.scrollHeight;
+}
+
+function clearFeed(html = '') {
+  feedQueue = [];
+  if (feedRaf) { cancelAnimationFrame(feedRaf); feedRaf = 0; }
+  $feed.innerHTML = html;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -407,7 +457,7 @@ async function runScan(s) {
   vs.reset();
   showScreen('vs');
   resetFilterBar();
-  $feed.innerHTML = ''; feedCount = 0;
+  clearFeed();
   closePreview();
 
   $('nav-folder').style.display    = 'flex';
@@ -418,7 +468,7 @@ async function runScan(s) {
   updateStats(); updateSelectionUI();
 
   setDot('run', t('recopilando archivos…', 'collecting files…'));
-  await frame();
+  await breathe();
   if (!alive(s)) return finishStopped(s);
   feedLine('📂  ' + s.name, 'dir');
 
@@ -427,7 +477,7 @@ async function runScan(s) {
   if (!alive(s)) return finishStopped(s);
 
   setDot('run', t('calculando SHA-256…', 'computing SHA-256…'));
-  await frame();
+  await breathe();
   await findDupes(s);
   if (!alive(s)) return finishStopped(s);
 
@@ -490,8 +540,10 @@ function showOkScreen(s) {
   showScreen('ok');
 }
 
-function setScanCount(s) {
-  $('scan-cnt').textContent = s.fileCount + ' ' + t('archivos', 'files');
+let statsRaf = 0;
+/* Actualiza contadores como mucho una vez por fotograma */
+function updateStatsSoon() {
+  if (!statsRaf) statsRaf = requestAnimationFrame(() => { statsRaf = 0; updateStats(); });
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -542,7 +594,7 @@ async function collectEntries(s, dh, entries, path, relDir, depth) {
         feedLine('✗  ' + fullPath + '  [' + t('omitida', 'skipped') + ': ' + skipLabel(reason) + ']', 'skip');
         s.skipCount++; continue;
       }
-      feedLine('▸  ' + fullPath, 'dir'); await frame();
+      feedLine('▸  ' + fullPath, 'dir'); await breathe();
       await collectDir(s, handle, fullPath, [...relDir, name], depth + 1);
     } else {
       try {
@@ -556,13 +608,13 @@ async function collectEntries(s, dh, entries, path, relDir, depth) {
           handle, parent: dh, canDelete: true,
         });
         s.fileCount++;
-        setScanCount(s);
+        updateStatsSoon();
+        await breathe('file');
       } catch (e) {
         if (!alive(s)) return;
         s.errors++;
         feedLine('✗  ' + fullPath + ' — ' + errMsg(e), 'err');
       }
-      if (s.fileCount % 15 === 0) await frame();
     }
   }
 }
@@ -612,8 +664,8 @@ async function collectFromInput(s, files) {
       fileObj: file, handle: null, parent: null, canDelete: false,
     });
     s.fileCount++;
-    setScanCount(s);
-    if (s.fileCount % 30 === 0) await frame();
+    updateStatsSoon();
+    await breathe('file');
   }
 }
 
@@ -626,55 +678,95 @@ async function findDupes(s) {
   if (total === 0) return;
 
   feedLine('─────────────────────────────', 'info');
-  feedLine('SHA-256: ' + total + ' ' + t('candidatos por tamaño', 'size-matched candidates'), 'info');
+  feedLine('SHA-256: ' + total + ' ' + t('candidatos por tamaño', 'size-matched candidates') +
+           ' · ' + hasher.size + ' ' + t('workers', 'workers'), 'info');
   if (s.cfg.strategy === 'sample')
     feedLine(t('⚡ Modo muestras activo para archivos > 20 MB', '⚡ Sampling mode active for files > 20 MB'), 'info');
-  await frame();
+  await breathe();
 
-  let done  = 0;
   const $pb = $('pbar');
+  const progress = (from, to, done, n) => { $pb.style.width = Math.round(from + (to - from) * done / Math.max(1, n)) + '%'; };
 
-  for (const group of candidates) {
-    for (const r of group) {
+  // Fase 1 — prefiltro: hash de los primeros 64 KB de los archivos grandes.
+  // Los que no coinciden con nadie ya no se leen enteros.
+  let finalSets = candidates;
+  if (PERF.prefilter) {
+    const small = candidates.filter(g => !needsPrefix(g[0].size));
+    const big   = candidates.filter(g =>  needsPrefix(g[0].size)).flat();
+    if (big.length) {
+      const byPrefix = new Map();
+      let done = 0;
+      await runPool(s, big, async r => {
+        const h = await hashRec(s, r, 'prefix');
+        if (h) {
+          const key = r.size + ':' + h;
+          if (!byPrefix.has(key)) byPrefix.set(key, []);
+          byPrefix.get(key).push(r);
+        }
+        progress(0, 30, ++done, big.length);
+      });
       if (!alive(s)) return;
-      feedLine('  ⚡ ' + r.name, 'file');
-      let hash;
-      try {
-        const file = r.fileObj || await r.handle.getFile();
-        if (!alive(s)) return;
-        if (!r.fileObj && (file.size !== r.size || file.lastModified !== r.lastModified))
-          throw new Error(t('ha cambiado durante el escaneo', 'changed during the scan'));
-        hash = await hasher.hash(file, s.cfg.strategy, { signal: s.abort.signal });
-      } catch (e) {
-        if (!alive(s)) return;
-        s.errors++;
-        feedLine('✗  ' + r.path + ' — ' + errMsg(e), 'err');
-        done++;
-        $pb.style.width = Math.round(done / total * 100) + '%';
-        continue;
-      }
-      if (!alive(s)) return;
+      const kept = [...byPrefix.values()].filter(g => g.length > 1);
+      const keptN = kept.reduce((n, g) => n + g.length, 0);
+      feedLine(t('Prefiltro (64 KB): ', 'Prefilter (64 KB): ') + (big.length - keptN) + ' / ' + big.length +
+               ' ' + t('descartados sin leerlos enteros', 'discarded without reading them fully'), 'info');
+      finalSets = small.concat(kept);
+    }
+  }
 
+  // Fase 2 — hash final (completo, o por muestras en modo rápido)
+  const items = finalSets.flat();
+  let done = 0;
+  await runPool(s, items, async r => {
+    const hash = await hashRec(s, r, s.cfg.strategy);
+    let kind = 'hash';
+    if (hash && alive(s)) {
       const g = s.index.addHash(r, hash, isSampled(r.size, s.cfg.strategy));
       if (g.files.length >= 2) {
         feedLine('💥 ' + (g.sampled ? t('PROBABLE DUPLICADO', 'PROBABLE DUPLICATE') : t('DUPLICADO', 'DUPLICATE')) + ': ' + r.name, 'match');
         if (g.files.length === 2) addGroupToList(g);
         else                      vs.update(g.key);
-        await frame();
+        kind = 'dupe';
       }
-      done++;
-      $pb.style.width = Math.round(done / total * 100) + '%';
-      updateStats();
     }
+    progress(PERF.prefilter ? 30 : 0, 100, ++done, items.length);
+    updateStatsSoon();
+    await breathe(kind);
+  });
+}
+
+/* Ejecuta fn sobre items con tantas tareas a la vez como workers tenga el pool */
+async function runPool(s, items, fn) {
+  let next = 0;
+  const lane = async () => {
+    while (next < items.length && alive(s)) await fn(items[next++]);
+  };
+  await Promise.all(Array.from({ length: Math.min(hasher.size, items.length) }, lane));
+}
+
+/* Hash de un archivo del índice; los errores se registran y devuelven null */
+async function hashRec(s, r, strategy) {
+  if (!alive(s)) return null;
+  if (strategy !== 'prefix') feedLine('  ⚡ ' + r.name, 'file');
+  try {
+    const file = r.fileObj || await r.handle.getFile();
+    if (!alive(s)) return null;
+    if (!r.fileObj && (file.size !== r.size || file.lastModified !== r.lastModified))
+      throw new Error(t('ha cambiado durante el escaneo', 'changed during the scan'));
+    return await hasher.hash(file, strategy, { signal: s.abort.signal });
+  } catch (e) {
+    if (!alive(s)) return null;
+    s.errors++;
+    feedLine('✗  ' + r.path + ' — ' + errMsg(e), 'err');
+    return null;
   }
 }
 
 function addGroupToList(g) {
   const ext = extOf(g.files[0].name);
-  vs.add(g.key);
+  vs.add(g.key); // si su formato está filtrado, queda oculto sin mover el scroll
   addExtToFilter(ext);
-  if (activeFilters.size > 0 && !activeFilters.has(ext)) vs.setFilter(activeFilters);
-  updateStats();
+  updateStatsSoon();
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -748,9 +840,10 @@ function updateSelectionUI() {
    STATISTICS
 ═══════════════════════════════════════════════════════════ */
 function updateStats() {
-  const s  = scan;
+  const s = scan;
   $('st-files').textContent = s ? s.fileCount : 0;
-  const n = s ? s.index.dupGroups().length : 0;
+  $('scan-cnt').textContent = s ? s.fileCount + ' ' + t('archivos', 'files') : '';
+  const n = s ? s.index.dupGroupCount : 0;
   const w = s ? s.index.recoverableBytes() : 0;
   $('st-size').textContent = w > 0 ? fmtSize(w) : '—';
   const badge = $('dupe-badge');
@@ -901,7 +994,7 @@ function resetApp() {
   $('limited-warn').style.display = hasFSAPI() ? 'none' : 'block';
 
   showScreen('home');
-  $feed.innerHTML = FEED_PLACEHOLDER; feedCount = 0;
+  clearFeed(FEED_PLACEHOLDER);
 
   setDot('idle', t('inactivo', 'idle'));
   $('scan-cnt').textContent    = '';
