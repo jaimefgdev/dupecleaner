@@ -8,6 +8,7 @@ Browser-based duplicate file finder. No server, no uploads — 100% local. Pick 
 
 ## Features
 
+- Safe removal — before moving or deleting, every copy and its original are re-read in full and compared with SHA-256; anything that changed or does not match is left alone. Quarantine is the default
 - Size pre-filter — files with different sizes are skipped before any I/O
 - Smart sampling — for files above 20 MB, reads only three 2 MB slices (start · middle · end), capped at 6 MB of RAM regardless of file size
 - Inline Web Worker — SHA-256 runs off the main thread, UI stays responsive throughout
@@ -25,7 +26,14 @@ A modern browser. Chrome 86+ or Edge 86+ for full functionality (scan + delete).
 
 ## Run it
 
-No installation needed. Open `index.html` directly in your browser, or use the live version:
+The app uses ES modules and a module Worker, so it must be served over HTTP (opening `index.html` from disk does not work). Any static server is fine:
+
+```
+npm run serve          # http://localhost:8080/
+# or: python3 -m http.server 8080
+```
+
+Or use the live version:
 
 ```
 https://jaimefg1888.github.io/DupeCleaner/
@@ -39,7 +47,7 @@ https://jaimefg1888.github.io/DupeCleaner/
 | Stop scan | Click "Detener" in the nav bar |
 | Preview file | Click the 👁 eye button on any file row |
 | Select for deletion | Check the checkbox (original is always protected) |
-| Delete | Click "Eliminar", type `CONFIRM` to confirm |
+| Remove | Click "Remove". By default copies are **moved to quarantine** (`_dupecleaner_cuarentena/` inside the scanned folder, keeping their path). Permanent deletion is an explicit option that requires typing `CONFIRM` |
 
 ## Project structure
 
@@ -50,6 +58,16 @@ DupeCleaner/
 ├── GoogleSans-Bold.ttf     # optional — falls back to system sans-serif
 └── README.md
 ```
+
+## Tests
+
+```
+npm ci
+npx playwright install chromium
+npm test
+```
+
+End-to-end tests only use OPFS (the browser's private, per-test storage). They never open or touch real folders.
 
 ## Deploy to GitHub Pages
 
@@ -73,6 +91,7 @@ Buscador de archivos duplicados que funciona 100% en el navegador. Sin servidor,
 
 ## Características
 
+- Borrado seguro — antes de mover o borrar, cada copia y su original se vuelven a leer enteros y se comparan con SHA-256; lo que haya cambiado o no coincida no se toca. La cuarentena es el modo por defecto
 - Pre-filtro por tamaño — archivos con distinto tamaño se descartan sin ninguna lectura de disco
 - Muestreo inteligente — para archivos de más de 20 MB, solo lee tres fragmentos de 2 MB (inicio · centro · final), limitando el consumo a 6 MB de RAM sin importar el tamaño del archivo
 - Web Worker inline — SHA-256 corre fuera del hilo principal, la interfaz no se congela en ningún momento
@@ -90,7 +109,14 @@ Un navegador moderno. Chrome 86+ o Edge 86+ para funcionalidad completa (escaneo
 
 ## Ejecutar
 
-Sin instalación. Abre `index.html` directamente en el navegador, o usa la versión en línea:
+La app usa módulos ES y un Worker de módulo, así que hay que servirla por HTTP (abrir `index.html` desde el disco no funciona). Vale cualquier servidor estático:
+
+```
+npm run serve          # http://localhost:8080/
+# o bien: python3 -m http.server 8080
+```
+
+O usa la versión en línea:
 
 ```
 https://jaimefg1888.github.io/DupeCleaner/
@@ -104,7 +130,7 @@ https://jaimefg1888.github.io/DupeCleaner/
 | Detener escaneo | Clic en "Detener" en la barra de navegación |
 | Previsualizar archivo | Clic en el botón 👁 de cualquier fila |
 | Seleccionar para borrar | Marcar el checkbox (el original siempre está protegido) |
-| Eliminar | Clic en "Eliminar", escribe `CONFIRMAR` para confirmar |
+| Quitar | Clic en "Quitar". Por defecto las copias se **mueven a cuarentena** (`_dupecleaner_cuarentena/` dentro de la carpeta escaneada, conservando su ruta). El borrado definitivo es una opción explícita que exige escribir `CONFIRMAR` |
 
 ## Estructura del proyecto
 
@@ -115,6 +141,16 @@ DupeCleaner/
 ├── GoogleSans-Bold.ttf     # opcional — usa system sans-serif si no está
 └── README.md
 ```
+
+## Pruebas
+
+```
+npm ci
+npx playwright install chromium
+npm test
+```
+
+Las pruebas end-to-end solo usan OPFS (almacenamiento privado del navegador, nuevo en cada prueba). Nunca abren ni tocan carpetas reales.
 
 ## Despliegue en GitHub Pages
 
