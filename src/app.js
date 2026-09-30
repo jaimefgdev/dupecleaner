@@ -4,7 +4,7 @@ import { isSampled } from './sha256.js';
 import { DupeIndex } from './dupe-index.js';
 import { planRemoval, verifyBeforeRemoval, REFUSE } from './safety.js';
 import { moveToQuarantine, removeFile } from './quarantine.js';
-import { DEFAULT_CFG, BLOCKED, isBlocked, isIgnoredDir, isIgnoredFile } from './filters.js';
+import { DEFAULT_CFG, SKIP, detectSystemRoot, dirSkipReason, isIgnoredFile } from './filters.js';
 import { esc, fmtSize, extOf, getIcon, isImg, isTxt, isVideo, isAudio, isPdf } from './format.js';
 import { VirtualScroller } from './virtual-scroller.js';
 
@@ -36,7 +36,8 @@ const newScan = p => ({
   id: ++scanSeq, cancelled: false, done: false,
   root: p.root, name: p.name, limited: p.limited, inputFiles: p.inputFiles,
   cfg: { ...cfg }, index: new DupeIndex(), sel: new Set(),
-  fileCount: 0, skipCount: 0,
+  abort: new AbortController(),
+  fileCount: 0, skipCount: 0, errors: 0,
 });
 const alive = s => s === scan && !s.cancelled;
 
@@ -198,6 +199,8 @@ function toggleLang() {
   updateCompatNote();
   updateSelectionUI();
   updateConfirmState();
+  if (scan) setScanCount(scan);
+  vs.refreshAll(); // las tarjetas llevan textos traducidos
 }
 
 function toggleMobileFeed() {
@@ -211,7 +214,13 @@ function setDot(state, label) {
   $('scan-lbl').textContent = label;
 }
 
-function stopScan() { if (scan) scan.cancelled = true; }
+function cancelScan(s) {
+  if (!s) return;
+  s.cancelled = true;
+  s.abort.abort(); // corta también un hash que esté a medias
+}
+
+function stopScan() { cancelScan(scan); }
 
 /* ═══════════════════════════════════════════════════════════
    SETTINGS MODAL
@@ -349,14 +358,16 @@ async function pickFolder() {
   let root;
   try { root = await window.showDirectoryPicker({ mode: 'readwrite' }); }
   catch { return; }
-  try {
-    const p = await root.requestPermission({ mode: 'readwrite' });
+  if (typeof root.requestPermission === 'function') {
+    let p;
+    try { p = await root.requestPermission({ mode: 'readwrite' }); }
+    catch (e) { p = 'error: ' + errMsg(e); }
     if (p !== 'granted') {
-      alert(t('Se necesita permiso de acceso. Acepta el permiso del navegador.',
-              'Access permission required. Accept the browser permission prompt.'));
+      alert(t('Se necesita permiso de lectura y escritura sobre la carpeta. Acepta el permiso del navegador.',
+              'Read and write permission on the folder is required. Accept the browser permission prompt.'));
       return;
     }
-  } catch { /* navegadores sin requestPermission */ }
+  }
   pending = { root, name: root.name, limited: false };
   showConfirm(root.name);
 }
@@ -377,8 +388,21 @@ function cancelPick() {
 ═══════════════════════════════════════════════════════════ */
 async function beginScan() {
   if (!pending) return;
-  if (scan) scan.cancelled = true;
+  cancelScan(scan);
   const s = scan = newScan(pending);
+  try {
+    await runScan(s);
+  } catch (e) {
+    // Error inesperado: nunca dejar la interfaz en "ejecutando"
+    console.error('[DupeCleaner]', e);
+    if (s !== scan) return;
+    s.errors++;
+    feedLine('✗  ' + t('Error inesperado', 'Unexpected error') + ': ' + errMsg(e), 'err');
+    finishStopped(s, t('error', 'error'));
+  }
+}
+
+async function runScan(s) {
 
   vs.reset();
   showScreen('vs');
@@ -399,7 +423,7 @@ async function beginScan() {
   feedLine('📂  ' + s.name, 'dir');
 
   if (s.limited) await collectFromInput(s, s.inputFiles);
-  else           await collect(s, s.root, s.name, []);
+  else           await collectRoot(s);
   if (!alive(s)) return finishStopped(s);
 
   setDot('run', t('calculando SHA-256…', 'computing SHA-256…'));
@@ -421,6 +445,8 @@ async function beginScan() {
     (s.skipCount ? ' · ' + s.skipCount + ' ' + t('carpetas omitidas', 'folders skipped') : ''),
     'ok'
   );
+  if (s.errors)
+    feedLine('⚠  ' + s.errors + ' ' + t('errores de lectura (ver líneas en rojo)', 'read errors (see red lines)'), 'err');
   if (gs.some(g => g.sampled))
     feedLine(t('⚠ Algunos conjuntos son probables (comparados por muestras). Se verifican completos antes de quitarlos.',
                '⚠ Some sets are probable (sample-compared). They are fully verified before removal.'), 'info');
@@ -430,15 +456,25 @@ async function beginScan() {
 }
 
 /* Un escaneo que ya no es el actual termina en silencio: la interfaz es de otro */
-function finishStopped(s) {
+function finishStopped(s, label) {
   if (s !== scan) return;
   s.done = true;
-  setDot('stop', t('detenido', 'stopped'));
+  setDot('stop', label || t('detenido', 'stopped'));
   $('btn-stop').style.display  = 'none';
   $('btn-reset').style.display = 'flex';
-  feedLine(t('— Escaneo detenido por el usuario —', '— Scan stopped by user —'), 'info');
-  updateSelectionUI();
+  if (!label) feedLine(t('— Escaneo detenido por el usuario —', '— Scan stopped by user —'), 'info');
+  updateStats(); updateSelectionUI();
 }
+
+const errMsg = e => e?.message || e?.name || String(e);
+
+const SKIP_LABEL = {
+  [SKIP.SYSTEM]:     ['sistema', 'system'],
+  [SKIP.QUARANTINE]: ['cuarentena', 'quarantine'],
+  [SKIP.DEV]:        ['desarrollo', 'development'],
+  [SKIP.HIDDEN]:     ['oculta', 'hidden'],
+};
+const skipLabel = r => t(...SKIP_LABEL[r]);
 
 function showOkScreen(s) {
   const okEl = $('ok-screen');
@@ -461,17 +497,53 @@ function setScanCount(s) {
 /* ═══════════════════════════════════════════════════════════
    COLLECT — File System Access API
 ═══════════════════════════════════════════════════════════ */
-async function collect(s, dh, path, relDir) {
-  for await (const [name, handle] of dh.entries()) {
+async function collectRoot(s) {
+  // Primero el nivel superior, para saber si es la raíz de un sistema operativo
+  const top = [];
+  try {
+    for await (const entry of s.root.entries()) {
+      if (!alive(s)) return;
+      top.push(entry);
+    }
+  } catch (e) {
+    s.errors++;
+    feedLine('✗  ' + s.name + ' — ' + t('no se puede leer la carpeta', 'cannot read folder') + ': ' + errMsg(e), 'err');
+    return;
+  }
+  s.systemRoot = detectSystemRoot(top.filter(([, h]) => h.kind === 'directory').map(([n]) => n));
+  if (s.systemRoot)
+    feedLine(t('ℹ Parece la raíz de un sistema (' + s.systemRoot + '): se omiten sus carpetas del sistema',
+               'ℹ Looks like a system root (' + s.systemRoot + '): its OS folders are skipped'), 'info');
+  await collectEntries(s, s.root, top, s.name, [], 1);
+}
+
+async function collectDir(s, dh, path, relDir, depth) {
+  try {
+    const entries = [];
+    for await (const entry of dh.entries()) {
+      if (!alive(s)) return;
+      entries.push(entry);
+    }
+    await collectEntries(s, dh, entries, path, relDir, depth);
+  } catch (e) {
+    if (!alive(s)) return;
+    s.errors++;
+    feedLine('✗  ' + path + ' — ' + t('no se puede leer la carpeta', 'cannot read folder') + ': ' + errMsg(e), 'err');
+  }
+}
+
+async function collectEntries(s, dh, entries, path, relDir, depth) {
+  for (const [name, handle] of entries) {
     if (!alive(s)) return;
     const fullPath = path + '/' + name;
     if (handle.kind === 'directory') {
-      if (isBlocked(fullPath) || isIgnoredDir(name, s.cfg)) {
-        feedLine('✗  ' + name + '  [' + t('omitida', 'skipped') + ']', 'skip');
-        s.skipCount++; await frame(); continue;
+      const reason = dirSkipReason(name, depth, s.systemRoot, s.cfg);
+      if (reason) {
+        feedLine('✗  ' + fullPath + '  [' + t('omitida', 'skipped') + ': ' + skipLabel(reason) + ']', 'skip');
+        s.skipCount++; continue;
       }
       feedLine('▸  ' + fullPath, 'dir'); await frame();
-      await collect(s, handle, fullPath, [...relDir, name]);
+      await collectDir(s, handle, fullPath, [...relDir, name], depth + 1);
     } else {
       try {
         const file = await handle.getFile();
@@ -485,7 +557,11 @@ async function collect(s, dh, path, relDir) {
         });
         s.fileCount++;
         setScanCount(s);
-      } catch { /* archivo ilegible: se ignora */ }
+      } catch (e) {
+        if (!alive(s)) return;
+        s.errors++;
+        feedLine('✗  ' + fullPath + ' — ' + errMsg(e), 'err');
+      }
       if (s.fileCount % 15 === 0) await frame();
     }
   }
@@ -495,7 +571,16 @@ async function collect(s, dh, path, relDir) {
    COLLECT — <input webkitdirectory> fallback
 ═══════════════════════════════════════════════════════════ */
 async function collectFromInput(s, files) {
-  const seenDirs = new Set();
+  // Carpetas del primer nivel, para detectar una raíz de sistema
+  const topDirs = new Set();
+  for (const f of files) {
+    const parts = f.webkitRelativePath.split('/');
+    if (parts.length > 2) topDirs.add(parts[1]);
+  }
+  s.systemRoot = detectSystemRoot(topDirs);
+
+  const seenDirs    = new Set();
+  const skippedDirs = new Set();
   for (let i = 0; i < files.length; i++) {
     if (!alive(s)) return;
     const file  = files[i];
@@ -503,15 +588,27 @@ async function collectFromInput(s, files) {
     const parts = rel.split('/');
     const name  = parts[parts.length - 1];
     const dir   = parts.slice(0, -1).join('/');
+    const sub   = parts.slice(1, -1); // carpetas bajo la raíz (el archivo no cuenta)
 
-    if (parts.some(p => BLOCKED.has(p.toLowerCase()) || isIgnoredDir(p, s.cfg))) { s.skipCount++; continue; }
+    // Las reglas de carpetas se aplican solo a carpetas, nunca al nombre del archivo
+    const skipAt = sub.findIndex((p, d) => dirSkipReason(p, d + 1, s.systemRoot, s.cfg));
+    if (skipAt >= 0) {
+      const skipped = parts.slice(0, skipAt + 2).join('/');
+      if (!skippedDirs.has(skipped)) {
+        skippedDirs.add(skipped);
+        s.skipCount++;
+        const reason = dirSkipReason(sub[skipAt], skipAt + 1, s.systemRoot, s.cfg);
+        feedLine('✗  ' + skipped + '  [' + t('omitida', 'skipped') + ': ' + skipLabel(reason) + ']', 'skip');
+      }
+      continue;
+    }
     if (file.size < s.cfg.minFileSize) continue;
     if (isIgnoredFile(name, s.cfg))     continue;
 
     if (!seenDirs.has(dir)) { seenDirs.add(dir); feedLine('▸  ' + dir, 'dir'); }
     feedLine('   ' + name, 'file');
     s.index.addFile({
-      path: rel, name, dir, relDir: parts.slice(1, -1), size: file.size, lastModified: file.lastModified,
+      path: rel, name, dir, relDir: sub, size: file.size, lastModified: file.lastModified,
       fileObj: file, handle: null, parent: null, canDelete: false,
     });
     s.fileCount++;
@@ -544,11 +641,16 @@ async function findDupes(s) {
       let hash;
       try {
         const file = r.fileObj || await r.handle.getFile();
-        hash = await hasher.hash(file, s.cfg.strategy);
+        if (!alive(s)) return;
+        if (!r.fileObj && (file.size !== r.size || file.lastModified !== r.lastModified))
+          throw new Error(t('ha cambiado durante el escaneo', 'changed during the scan'));
+        hash = await hasher.hash(file, s.cfg.strategy, { signal: s.abort.signal });
       } catch (e) {
         if (!alive(s)) return;
-        feedLine('✗  ' + r.name + ' — ' + (e?.message || e), 'err');
+        s.errors++;
+        feedLine('✗  ' + r.path + ' — ' + errMsg(e), 'err');
         done++;
+        $pb.style.width = Math.round(done / total * 100) + '%';
         continue;
       }
       if (!alive(s)) return;
@@ -695,7 +797,7 @@ async function previewFile(id) {
       const img  = document.createElement('img');
       img.style.cssText  = 'max-width:100%;max-height:calc(100vh - 160px);border-radius:4px;border:1px solid var(--border);display:block;margin:0 auto;';
       img.src    = url; img.alt = fi.name;
-      img.onload = () => URL.revokeObjectURL(url);
+      img.onload = img.onerror = () => URL.revokeObjectURL(url);
       wrap.appendChild(img); $c.appendChild(wrap);
 
     } else if (isVideo(fi.name)) {
@@ -768,7 +870,7 @@ async function previewFile(id) {
     $('pv-loading')?.remove();
     const err = document.createElement('div');
     err.style.cssText = "color:var(--red);font-size:.72rem;font-family:'Fira Code',monospace;margin-top:8px;";
-    err.textContent   = t('Error al cargar', 'Error loading') + ': ' + (e?.message || e);
+    err.textContent   = t('Error al cargar', 'Error loading') + ': ' + errMsg(e);
     $c.appendChild(err);
   }
 }
@@ -788,7 +890,7 @@ function closePreview() {
    RESET
 ═══════════════════════════════════════════════════════════ */
 function resetApp() {
-  if (scan) scan.cancelled = true;
+  cancelScan(scan);
   scan = null; pending = null;
 
   closePreview();
@@ -915,7 +1017,7 @@ async function execRemoval() {
           feedLine('🗑  ' + t('Eliminado', 'Deleted') + ': ' + rec.path, 'match');
         }
       } catch (e) {
-        feedLine('✗  ' + t('Error', 'Error') + ': ' + rec.path + ' — ' + (e?.message || e), 'err');
+        feedLine('✗  ' + t('Error', 'Error') + ': ' + rec.path + ' — ' + errMsg(e), 'err');
         s.sel.delete(rec.id); markRow(rec.id, false); skipped++;
         continue;
       }
@@ -944,27 +1046,9 @@ async function execRemoval() {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   ③ PWA  (Manifest as Data URI + Inline Blob Service Worker)
+   PWA — manifest.webmanifest + sw.js (funciona sin conexión tras la primera carga)
 ═══════════════════════════════════════════════════════════ */
-(function setupPWA() {
-  const ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-    <rect width="100" height="100" rx="20" fill="#ff0033"/>
-    <text x="50" y="68" font-size="52" text-anchor="middle" fill="white" font-family="monospace" font-weight="700">D</text>
-  </svg>`;
-  const iconUri = 'data:image/svg+xml;base64,' + btoa(ICON_SVG);
-
-  const manifest = {
-    name: 'DupeCleaner',
-    short_name: 'DupeCleaner',
-    description: 'Find and delete duplicate files using SHA-256',
-    start_url: '.',
-    display: 'standalone',
-    background_color: '#050505',
-    theme_color: '#ff0033',
-    icons: [{ src: iconUri, sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }],
-  };
-  try {
-    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifest))));
-    $('pwa-manifest').href = 'data:application/manifest+json;base64,' + b64;
-  } catch (e) { console.warn('[PWA] Manifest inject failed:', e); }
-})();
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('./sw.js').catch(err =>
+    console.warn('[DupeCleaner] Service worker registration failed:', err));
+}

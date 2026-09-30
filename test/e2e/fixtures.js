@@ -76,11 +76,11 @@ export async function overwrite(page, dir, path, text) {
 }
 
 /** Elige la carpeta OPFS `dir` y lanza el escaneo; espera a que termine */
-export async function scanFolder(page, dir) {
+export async function scanFolder(page, dir, done = /completado/) {
   await page.evaluate(d => { window.__pickDir = d; }, dir);
   await page.click('#home [data-action="pick-folder"]');
   await page.click('[data-action="begin-scan"]');
-  await expect(page.locator('#scan-lbl')).toHaveText(/completado/);
+  await expect(page.locator('#scan-lbl')).toHaveText(done);
 }
 
 /** Selecciona todas las copias, abre el diálogo de quitar */
@@ -102,4 +102,13 @@ export async function keeperPath(page) {
   const dir  = await rows.first().locator('.df-path').innerText();
   const name = (await rows.first().locator('.df-name').innerText()).replace(/original$/, '').trim();
   return (dir.split('/').slice(1).concat(name)).join('/');
+}
+
+/** Cambia opciones de escaneo desde el diálogo de Opciones */
+export async function setOptions(page, { hidden, dev, strategy } = {}) {
+  await page.click('[data-action="open-settings"]');
+  if (hidden !== undefined) await page.setChecked('#cfg-hidden', hidden);
+  if (dev !== undefined)    await page.setChecked('#cfg-dev', dev);
+  if (strategy)             await page.click(`#card-${strategy === 'full' ? 'full' : 'sample'}`);
+  await page.click('[data-action="save-settings"]');
 }
