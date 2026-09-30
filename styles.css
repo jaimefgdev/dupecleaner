@@ -346,3 +346,13 @@
       .sbox { max-height:85svh; }
     }
   
+    /* ── REMOVAL MODES ── */
+    .del-modes { display:flex; flex-direction:column; gap:8px; }
+    .del-mode  { display:flex; align-items:flex-start; gap:12px; border:1px solid var(--border2); border-radius:5px; padding:11px 14px; cursor:pointer; transition:border-color .18s, background .18s; }
+    .del-mode:hover    { border-color:var(--muted); }
+    .del-mode.selected { border-color:var(--red); background:var(--red-dim); }
+    .del-mode input[type=radio] { accent-color:var(--red); flex-shrink:0; margin-top:3px; cursor:pointer; }
+    .del-mode code { font-family:'Fira Code',monospace; font-size:.68rem; }
+
+    /* ── PROBABLE (SAMPLED) GROUPS ── */
+    .probable-tag { font-size:.58rem; color:#fff; background:#b26b00; padding:1px 6px; border-radius:8px; margin-left:6px; font-family:'Fira Code',monospace; font-weight:700; vertical-align:middle; }
